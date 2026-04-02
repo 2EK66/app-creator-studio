@@ -1,16 +1,19 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { BottomTabs } from "@/components/mirec/BottomTabs";
+import Feed from "./Feed";
+import Placeholder from "./Placeholder";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+export default function Index() {
+  const [tab, setTab] = useState("feed");
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="max-w-screen overflow-x-hidden">
+      {tab === "feed" && <Feed />}
+      {tab === "groupes" && <Placeholder title="Groupes" />}
+      {tab === "inbox" && <Placeholder title="Messages" />}
+      {tab === "louange" && <Placeholder title="Louange" />}
+      {tab === "profil" && <Placeholder title="Profil" />}
+      <BottomTabs active={tab} onChange={setTab} />
     </div>
   );
-};
-
-const Index = PlaceholderIndex;
-
-export default Index;
+}
