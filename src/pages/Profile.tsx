@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { MirecLogo } from "@/components/mirec/MirecLogo";
-import { Avatar } from "@/components/mirec/Avatar";
+import { MirecAvatar } from "@/components/mirec/Avatar";
 import { Moon, Sun, Download, LogOut, ChevronRight, User, Mail, Edit3, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
