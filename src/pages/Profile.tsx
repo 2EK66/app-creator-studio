@@ -80,7 +80,7 @@ export default function Profile() {
     <div className="max-w-lg mx-auto pb-24 px-4 pt-6">
       {/* Header */}
       <div className="flex flex-col items-center mb-8">
-        <Avatar name={fullName || user.email || "U"} url={avatarUrl} size={80} />
+        <MirecAvatar initials={(fullName || user.email || "U").slice(0, 2).toUpperCase()} color="hsl(220 70% 35%)" size={80} />
         {!editing ? (
           <>
             <h2 className="font-display text-xl font-bold text-foreground mt-3">{fullName || "Utilisateur"}</h2>
