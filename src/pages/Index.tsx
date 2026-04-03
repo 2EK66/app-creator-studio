@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BottomTabs } from "@/components/mirec/BottomTabs";
 import Feed from "./Feed";
+import Profile from "./Profile";
 import Placeholder from "./Placeholder";
 
 export default function Index() {
@@ -12,7 +13,7 @@ export default function Index() {
       {tab === "groupes" && <Placeholder title="Groupes" />}
       {tab === "inbox" && <Placeholder title="Messages" />}
       {tab === "louange" && <Placeholder title="Louange" />}
-      {tab === "profil" && <Placeholder title="Profil" />}
+      {tab === "profil" && <Profile />}
       <BottomTabs active={tab} onChange={setTab} />
     </div>
   );
