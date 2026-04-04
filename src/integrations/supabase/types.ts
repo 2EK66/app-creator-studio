@@ -299,6 +299,80 @@ export type Database = {
         }
         Relationships: []
       }
+      project_members: {
+        Row: {
+          id: string
+          joined_at: string | null
+          profile_id: string
+          project_id: string
+          role: string | null
+        }
+        Insert: {
+          id?: string
+          joined_at?: string | null
+          profile_id: string
+          project_id: string
+          role?: string | null
+        }
+        Update: {
+          id?: string
+          joined_at?: string | null
+          profile_id?: string
+          project_id?: string
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_members_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          budget_current: number | null
+          budget_goal: number | null
+          category: string
+          created_at: string | null
+          created_by: string | null
+          deadline: string | null
+          description: string | null
+          id: string
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          budget_current?: number | null
+          budget_goal?: number | null
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          budget_current?: number | null
+          budget_goal?: number | null
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       reactions: {
         Row: {
           author_id: string
