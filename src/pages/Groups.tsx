@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { MirecLogo } from "@/components/mirec/MirecLogo";
+import { MirecAvatar } from "@/components/mirec/Avatar";
 import {
   Users, MessageCircle, Calendar, Briefcase,
-  BarChart2, Plus, ChevronRight, ArrowLeft,
-  Lock, Globe, Check, X
+  Plus, ArrowLeft, Send, Lock, Globe, RefreshCw
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -15,63 +15,45 @@ import { useNavigate } from "react-router-dom";
 interface Group {
   id: string;
   name: string;
-  type: string;
-  icon_emoji: string;
-  description: string;
   visibility: string;
+  created_by: string | null;
   created_at: string;
-  is_member?: boolean;
-  member_count?: number;
+  member_count: number;
+  is_member: boolean;
 }
 
-interface Message {
+interface GroupMessage {
   id: string;
   content: string;
-  is_prayer: boolean;
   created_at: string;
   sender_id: string;
-  profiles: { full_name: string };
+  sender_name: string;
 }
 
 interface Event {
   id: string;
   title: string;
-  description: string;
-  location: string;
+  description: string | null;
   event_date: string;
-  rsvp_count?: number;
-  my_rsvp?: string;
+  created_by: string | null;
 }
 
 interface Project {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   status: string;
-  created_at: string;
+  category: string;
+  budget_goal: number | null;
+  budget_current: number | null;
+  deadline: string | null;
+  created_by: string | null;
 }
 
-interface Poll {
-  id: string;
-  question: string;
-  options: PollOption[];
-  ends_at: string;
-  my_vote?: string;
-}
-
-interface PollOption {
-  id: string;
-  text: string;
-  votes: number;
-}
-
-// ============================================================
-// UTILITAIRES
-// ============================================================
 function timeAgo(iso: string) {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60)    return "à l'instant";
-  if (diff < 3600)  return `${Math.floor(diff / 60)}min`;
+  if (diff < 60) return "à l'instant";
+  if (diff < 3600) return `${Math.floor(diff / 60)}min`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
   return `${Math.floor(diff / 86400)}j`;
 }
@@ -82,456 +64,355 @@ function formatDate(iso: string) {
   });
 }
 
-function getInitials(name: string) {
-  return name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
-}
-
-function typeConfig(type: string) {
-  const map: Record<string, { color: string; bg: string; label: string }> = {
-    official:  { color: "#1A4B9B", bg: "#EEF5FD", label: "Officiel"  },
-    quartier:  { color: "#059669", bg: "#ECFDF5", label: "Quartier"  },
-    ministere: { color: "#D97706", bg: "#FFFBEB", label: "Ministère" },
-    defi:      { color: "#7C3AED", bg: "#F5F3FF", label: "Défi"      },
-    prive:     { color: "#6B7280", bg: "#F3F4F6", label: "Privé"     },
-  };
-  return map[type] || map["prive"];
-}
-
 // ============================================================
-// MOCK DATA (remplacer par Supabase en prod)
+// GROUP LIST
 // ============================================================
-const MOCK_GROUPS: Group[] = [
-  { id: "1", name: "Groupe des jeunes", type: "ministere", icon_emoji: "🔥", description: "Espace des jeunes de MIREC", visibility: "public", created_at: "", is_member: true, member_count: 47 },
-  { id: "2", name: "Chorale Hosanna",   type: "ministere", icon_emoji: "🎶", description: "Répétitions et partitions", visibility: "public", created_at: "", is_member: true, member_count: 23 },
-  { id: "3", name: "Cellule Akpakpa",   type: "quartier",  icon_emoji: "🙏", description: "Cellule de prière du quartier", visibility: "public", created_at: "", is_member: false, member_count: 18 },
-  { id: "4", name: "Diacres MIREC",     type: "official",  icon_emoji: "⛪", description: "Groupe officiel des diacres", visibility: "public", created_at: "", is_member: false, member_count: 8 },
-  { id: "5", name: "Défi 21 jours",     type: "defi",      icon_emoji: "📖", description: "21 jours de lecture biblique", visibility: "public", created_at: "", is_member: true, member_count: 34 },
-];
-
-const MOCK_MESSAGES: Record<string, Message[]> = {
-  "1": [
-    { id: "m1", content: "Frères, on se retrouve samedi à 15h pour la sortie !", is_prayer: false, created_at: new Date(Date.now()-3600000).toISOString(), sender_id: "a", profiles: { full_name: "Jonas Kossou" } },
-    { id: "m2", content: "Priez pour mon examen de lundi s'il vous plaît 🙏", is_prayer: true, created_at: new Date(Date.now()-1800000).toISOString(), sender_id: "b", profiles: { full_name: "Ama Sévi" } },
-    { id: "m3", content: "Je serai là avec ma sœur !", is_prayer: false, created_at: new Date(Date.now()-600000).toISOString(), sender_id: "c", profiles: { full_name: "Ruth Dossou" } },
-  ],
-};
-
-const MOCK_EVENTS: Record<string, Event[]> = {
-  "1": [
-    { id: "e1", title: "Sortie plage Fidjrossè", description: "Journée de fellowship et de louange au bord de la mer", location: "Fidjrossè, Cotonou", event_date: new Date(Date.now()+3*86400000).toISOString(), rsvp_count: 23, my_rsvp: "going" },
-    { id: "e2", title: "Culte de jeunesse", description: "Culte mensuel dédié aux jeunes", location: "Église principale MIREC", event_date: new Date(Date.now()+7*86400000).toISOString(), rsvp_count: 41, my_rsvp: undefined },
-  ],
-  "2": [
-    { id: "e3", title: "Répétition chorale", description: "Répétition pour le culte du dimanche", location: "Salle de répétition", event_date: new Date(Date.now()+2*86400000).toISOString(), rsvp_count: 18, my_rsvp: "going" },
-  ],
-};
-
-const MOCK_PROJECTS: Record<string, Project[]> = {
-  "1": [
-    { id: "p1", title: "Camp de jeunesse 2025", description: "Organisation du camp annuel de jeunes", status: "en_cours", created_at: new Date(Date.now()-7*86400000).toISOString() },
-    { id: "p2", title: "Évangélisation quartier Cadjehoun", description: "Planifier une semaine d'évangélisation", status: "planifie", created_at: new Date(Date.now()-14*86400000).toISOString() },
-  ],
-  "2": [
-    { id: "p3", title: "Nouvelle partition Easter Sunday", description: "Apprendre les nouveaux cantiques", status: "en_cours", created_at: new Date().toISOString() },
-  ],
-};
-
-const MOCK_POLLS: Record<string, Poll[]> = {
-  "1": [
-    {
-      id: "pl1", question: "Quel jour préférez-vous pour la réunion de groupe ?",
-      ends_at: new Date(Date.now()+5*86400000).toISOString(),
-      my_vote: undefined,
-      options: [
-        { id: "o1", text: "Samedi après-midi", votes: 14 },
-        { id: "o2", text: "Dimanche soir", votes: 8 },
-        { id: "o3", text: "Vendredi soir", votes: 11 },
-      ],
-    },
-    {
-      id: "pl2", question: "Thème du prochain camp de jeunesse ?",
-      ends_at: new Date(Date.now()+10*86400000).toISOString(),
-      my_vote: "o5",
-      options: [
-        { id: "o4", text: "La foi qui déplace les montagnes", votes: 19 },
-        { id: "o5", text: "Identité en Christ", votes: 22 },
-        { id: "o6", text: "Le service et l'humilité", votes: 15 },
-      ],
-    },
-  ],
-};
-
-// ============================================================
-// COMPOSANT : LISTE DES GROUPES
-// ============================================================
-function GroupListView({ onSelect }: { onSelect: (g: Group) => void }) {
-  const [groups, setGroups] = useState(MOCK_GROUPS);
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"mine" | "all">("mine");
-
-  const filtered = groups
-    .filter(g => filter === "mine" ? g.is_member : true)
-    .filter(g => g.name.toLowerCase().includes(search.toLowerCase()));
-
-  const join = (id: string) => {
-    setGroups(prev => prev.map(g => g.id === id ? { ...g, is_member: true } : g));
-  };
-
+function GroupListView({ groups, loading, onSelect, onJoin, onRefresh, refreshing, onShowCreate }: {
+  groups: Group[];
+  loading: boolean;
+  onSelect: (g: Group) => void;
+  onJoin: (id: string) => void;
+  onRefresh: () => void;
+  refreshing: boolean;
+  onShowCreate: () => void;
+}) {
   return (
-    <div className="max-w-lg mx-auto px-4 pt-4 pb-6">
-      {/* Search */}
-      <input
-        value={search} onChange={e => setSearch(e.target.value)}
-        placeholder="Rechercher un groupe..."
-        className="w-full px-4 py-2.5 rounded-xl border border-border bg-card text-sm outline-none focus:ring-2 focus:ring-primary/30 mb-3"
-      />
-
-      {/* Filter tabs */}
-      <div className="flex bg-muted rounded-xl p-1 gap-1 mb-4">
-        {[{ k: "mine", l: "Mes groupes" }, { k: "all", l: "Tous les groupes" }].map(f => (
-          <button key={f.k} onClick={() => setFilter(f.k as any)}
-            className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all
-              ${filter === f.k ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}>
-            {f.l}
-          </button>
-        ))}
+    <div className="max-w-lg mx-auto px-4 pt-4 pb-6 space-y-3">
+      <div className="flex justify-between items-center mb-2">
+        <button onClick={onRefresh} disabled={refreshing} className="p-2 rounded-full hover:bg-muted transition-colors">
+          <RefreshCw className={`w-4 h-4 text-muted-foreground ${refreshing ? "animate-spin" : ""}`} />
+        </button>
+        <button onClick={onShowCreate}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium">
+          <Plus className="w-4 h-4" /> Créer un groupe
+        </button>
       </div>
 
-      {/* Groups */}
-      <div className="space-y-3">
-        {filtered.map(g => {
-          const tc = typeConfig(g.type);
-          return (
-            <div key={g.id}
-              className="bg-card border border-border/50 rounded-2xl p-4 flex items-center gap-3 shadow-sm cursor-pointer hover:border-primary/30 transition-all"
-              onClick={() => g.is_member && onSelect(g)}
-            >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-                style={{ backgroundColor: tc.bg }}>
-                {g.icon_emoji}
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : groups.length === 0 ? (
+        <div className="text-center py-12">
+          <Users className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+          <p className="text-muted-foreground text-sm">Aucun groupe pour l'instant</p>
+        </div>
+      ) : groups.map(g => (
+        <div key={g.id} className="bg-card rounded-2xl p-4 border border-border/50 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onClick={() => g.is_member && onSelect(g)}>
+              <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                {g.visibility === "private" ? <Lock className="w-5 h-5 text-primary" /> : <Users className="w-5 h-5 text-primary" />}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-sm text-foreground truncate">{g.name}</span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                    style={{ color: tc.color, backgroundColor: tc.bg }}>
-                    {tc.label}
-                  </span>
-                  {g.visibility === "prive" && <Lock className="w-3 h-3 text-muted-foreground" />}
-                </div>
-                <p className="text-xs text-muted-foreground truncate mt-0.5">{g.description}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{g.member_count} membres</p>
-              </div>
-              <div className="flex-shrink-0">
-                {g.is_member ? (
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                ) : (
-                  <button onClick={e => { e.stopPropagation(); join(g.id); }}
-                    className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-semibold border border-primary/20 hover:bg-primary/20 transition-colors">
-                    Rejoindre
-                  </button>
-                )}
+              <div className="min-w-0">
+                <h3 className="font-semibold text-sm text-foreground truncate">{g.name}</h3>
+                <p className="text-[11px] text-muted-foreground">
+                  {g.member_count} membre{g.member_count > 1 ? "s" : ""}
+                  {g.visibility === "private" && " · Privé"}
+                </p>
               </div>
             </div>
-          );
-        })}
-      </div>
-
-      {/* Créer un groupe */}
-      <button className="w-full mt-4 py-3 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground flex items-center justify-center gap-2 hover:border-primary/40 hover:text-primary transition-colors">
-        <Plus className="w-4 h-4" /> Créer un nouveau groupe
-      </button>
+            {g.is_member ? (
+              <span className="px-3 py-1.5 rounded-lg text-xs font-medium text-primary bg-primary/10">Membre</span>
+            ) : (
+              <button onClick={() => onJoin(g.id)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground">
+                Rejoindre
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
 // ============================================================
-// COMPOSANT : ESPACE GROUPE (tabs internes)
+// CREATE GROUP MODAL
 // ============================================================
-const GROUP_TABS = [
-  { id: "chat",      label: "Chat",       icon: MessageCircle },
-  { id: "events",    label: "Événements", icon: Calendar      },
-  { id: "projects",  label: "Projets",    icon: Briefcase     },
-  { id: "polls",     label: "Sondages",   icon: BarChart2     },
-] as const;
-type GroupTabId = (typeof GROUP_TABS)[number]["id"];
+function CreateGroupModal({ onClose, onCreate }: {
+  onClose: () => void;
+  onCreate: (name: string, visibility: string) => void;
+}) {
+  const [name, setName] = useState("");
+  const [visibility, setVisibility] = useState("public");
+  const [creating, setCreating] = useState(false);
 
-function GroupSpace({ group, onBack }: { group: Group; onBack: () => void }) {
-  const [activeTab, setActiveTab] = useState<GroupTabId>("chat");
-  const { user } = useAuth();
+  const submit = async () => {
+    if (!name.trim()) return;
+    setCreating(true);
+    await onCreate(name.trim(), visibility);
+    setCreating(false);
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header groupe */}
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={onClose}>
+      <div className="bg-card rounded-t-2xl sm:rounded-2xl w-full max-w-lg p-6 space-y-4" onClick={e => e.stopPropagation()}>
+        <h3 className="font-display text-lg font-bold text-foreground">Créer un groupe</h3>
+        <input value={name} onChange={e => setName(e.target.value)} placeholder="Nom du groupe"
+          className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+        <div className="flex gap-2">
+          <button onClick={() => setVisibility("public")}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 ${
+              visibility === "public" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+            <Globe className="w-4 h-4" /> Public
+          </button>
+          <button onClick={() => setVisibility("private")}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 ${
+              visibility === "private" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+            <Lock className="w-4 h-4" /> Privé
+          </button>
+        </div>
+        <button onClick={submit} disabled={creating || !name.trim()}
+          className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-50">
+          {creating ? "Création..." : "Créer"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// GROUP SPACE (chat, events, projects)
+// ============================================================
+type GroupTab = "chat" | "events" | "projects";
+
+function GroupSpace({ group, onBack }: { group: Group; onBack: () => void }) {
+  const { user } = useAuth();
+  const [tab, setTab] = useState<GroupTab>("chat");
+
+  const tabs: { id: GroupTab; label: string; icon: any }[] = [
+    { id: "chat", label: "Chat", icon: MessageCircle },
+    { id: "events", label: "Événements", icon: Calendar },
+    { id: "projects", label: "Projets", icon: Briefcase },
+  ];
+
+  return (
+    <div className="min-h-screen bg-background pb-20">
       <div className="sticky top-0 z-30 bg-card/90 backdrop-blur-lg border-b border-border/50">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
-          <span className="text-xl">{group.icon_emoji}</span>
           <div className="flex-1 min-w-0">
             <h2 className="font-bold text-base text-foreground truncate">{group.name}</h2>
             <p className="text-[11px] text-muted-foreground">{group.member_count} membres</p>
           </div>
-          <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
-            <div className="w-2 h-2 rounded-full bg-green-500" />
-          </div>
         </div>
-
-        {/* Tabs internes */}
-        <div className="max-w-lg mx-auto flex border-b border-border/30 overflow-x-auto">
-          {GROUP_TABS.map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
+        <div className="max-w-lg mx-auto flex border-t border-border/30">
+          {tabs.map(t => {
+            const Icon = t.icon;
             return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 text-xs font-medium transition-colors border-b-2 whitespace-nowrap px-2
-                  ${isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-                <Icon className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{tab.label.split(" ")[0]}</span>
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium border-b-2 transition-colors ${
+                  tab === t.id ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
+                <Icon className="w-3.5 h-3.5" /> {t.label}
               </button>
             );
           })}
         </div>
       </div>
-
-      {/* Contenu tab */}
       <div className="max-w-lg mx-auto">
-        {activeTab === "chat"     && <GroupChat     groupId={group.id} userId={user?.id} />}
-        {activeTab === "events"   && <GroupEvents   groupId={group.id} userId={user?.id} />}
-        {activeTab === "projects" && <GroupProjects groupId={group.id} />}
-        {activeTab === "polls"    && <GroupPolls    groupId={group.id} userId={user?.id} />}
+        {tab === "chat" && <GroupChat groupId={group.id} userId={user?.id} />}
+        {tab === "events" && <GroupEventsTab />}
+        {tab === "projects" && <GroupProjectsTab />}
       </div>
     </div>
   );
 }
 
 // ============================================================
-// CHAT DU GROUPE
+// CHAT
 // ============================================================
 function GroupChat({ groupId, userId }: { groupId: string; userId?: string }) {
-  const messages = MOCK_MESSAGES[groupId] || [];
+  const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [text, setText] = useState("");
-  const [localMsgs, setLocalMsgs] = useState(messages);
-  const [showPrayer, setShowPrayer] = useState(false);
-  const [prayerText, setPrayerText] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const send = () => {
-    if (!text.trim()) return;
-    setLocalMsgs(prev => [...prev, {
-      id: Date.now().toString(), content: text, is_prayer: false,
-      created_at: new Date().toISOString(), sender_id: userId || "me",
-      profiles: { full_name: "Moi" },
-    }]);
-    setText("");
-  };
+  const fetchMessages = useCallback(async () => {
+    const { data: msgs } = await supabase
+      .from("group_messages").select("*").eq("group_id", groupId)
+      .order("created_at", { ascending: true });
+    if (msgs) {
+      const senderIds = [...new Set(msgs.map(m => m.sender_id))];
+      const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", senderIds.length ? senderIds : ["none"]);
+      const map = Object.fromEntries((profiles || []).map(p => [p.id, p.full_name || "Anonyme"]));
+      setMessages(msgs.map(m => ({ ...m, sender_name: m.sender_id === userId ? "Moi" : (map[m.sender_id] || "Anonyme") })));
+    }
+    setLoading(false);
+  }, [groupId, userId]);
 
-  const sendPrayer = () => {
-    if (!prayerText.trim()) return;
-    setLocalMsgs(prev => [...prev, {
-      id: Date.now().toString(), content: prayerText, is_prayer: true,
-      created_at: new Date().toISOString(), sender_id: userId || "me",
-      profiles: { full_name: "Moi" },
-    }]);
-    setPrayerText(""); setShowPrayer(false);
+  useEffect(() => { fetchMessages(); }, [fetchMessages]);
+
+  const send = async () => {
+    if (!text.trim() || !userId) return;
+    const { error } = await supabase.from("group_messages").insert({
+      group_id: groupId, sender_id: userId, content: text.trim(),
+    });
+    if (!error) {
+      setMessages(prev => [...prev, {
+        id: crypto.randomUUID(), content: text.trim(),
+        created_at: new Date().toISOString(), sender_id: userId, sender_name: "Moi",
+      }]);
+      setText("");
+    }
   };
 
   return (
     <div className="flex flex-col" style={{ height: "calc(100vh - 140px)" }}>
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        {localMsgs.map(msg => {
-          const isMe = msg.sender_id === userId || msg.sender_id === "me";
-          if (msg.is_prayer) {
-            return (
-              <div key={msg.id} className="mx-auto max-w-xs">
-                <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-2xl p-3">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-sm">🙏</span>
-                    <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wide">Sujet de prière</span>
-                  </div>
-                  <p className="text-xs font-semibold text-purple-800 dark:text-purple-300 mb-0.5">{msg.profiles.full_name}</p>
-                  <p className="text-sm text-foreground italic">{msg.content}</p>
-                  <p className="text-[10px] text-muted-foreground mt-1.5 text-right">{timeAgo(msg.created_at)}</p>
-                </div>
-              </div>
-            );
-          }
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : messages.length === 0 ? (
+          <p className="text-center text-muted-foreground text-sm py-12">Aucun message. Sois le premier !</p>
+        ) : messages.map(msg => {
+          const isMe = msg.sender_id === userId;
           return (
-            <div key={msg.id} className={`flex gap-2 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
-              {!isMe && (
-                <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 self-end">
-                  {getInitials(msg.profiles.full_name)}
-                </div>
-              )}
-              <div className={`max-w-[72%] ${isMe ? "items-end" : "items-start"} flex flex-col`}>
-                {!isMe && <p className="text-[10px] font-semibold text-primary mb-0.5 ml-1">{msg.profiles.full_name}</p>}
-                <div className={`px-3 py-2 rounded-2xl text-sm ${
-                  isMe ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card border border-border/50 text-foreground rounded-bl-sm"
-                }`}>
-                  {msg.content}
-                </div>
-                <p className={`text-[9px] text-muted-foreground mt-0.5 ${isMe ? "mr-1" : "ml-1"}`}>{timeAgo(msg.created_at)}</p>
+            <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 ${
+                isMe ? "bg-primary text-primary-foreground rounded-br-md" : "bg-muted text-foreground rounded-bl-md"}`}>
+                {!isMe && <p className="text-[10px] font-semibold mb-0.5 opacity-70">{msg.sender_name}</p>}
+                <p className="text-sm">{msg.content}</p>
+                <p className={`text-[9px] mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                  {new Date(msg.created_at).toLocaleTimeString("fr", { hour: "2-digit", minute: "2-digit" })}
+                </p>
               </div>
             </div>
           );
         })}
       </div>
-
-      {/* Zone prière */}
-      {showPrayer && (
-        <div className="px-4 pb-2 border-t border-border/30 bg-card pt-3">
-          <p className="text-xs font-bold text-purple-600 mb-2">🙏 Partager un sujet de prière</p>
-          <textarea value={prayerText} onChange={e => setPrayerText(e.target.value)}
-            placeholder="Décris ton sujet de prière..."
-            className="w-full text-sm px-3 py-2 rounded-xl border border-border bg-background outline-none resize-none"
-            rows={2} />
-          <div className="flex gap-2 mt-2">
-            <button onClick={() => setShowPrayer(false)} className="px-3 py-1.5 rounded-lg border border-border text-xs text-muted-foreground">Annuler</button>
-            <button onClick={sendPrayer} className="flex-1 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-semibold">Partager</button>
-          </div>
+      <div className="border-t border-border/50 px-4 py-3">
+        <div className="flex gap-2">
+          <input value={text} onChange={e => setText(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && send()}
+            placeholder="Écrire un message..."
+            className="flex-1 px-4 py-2.5 rounded-full border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+          <button onClick={send} className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+            <Send className="w-4 h-4" />
+          </button>
         </div>
-      )}
-
-      {/* Input */}
-      <div className="px-4 py-3 border-t border-border/30 bg-card flex gap-2 items-center">
-        <button onClick={() => setShowPrayer(true)}
-          className="w-9 h-9 rounded-full bg-purple-100 dark:bg-purple-950 flex items-center justify-center text-base flex-shrink-0">
-          🙏
-        </button>
-        <input value={text} onChange={e => setText(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && send()}
-          placeholder="Message..."
-          className="flex-1 px-3 py-2 rounded-full bg-muted text-sm outline-none border border-border focus:border-primary/40"
-        />
-        <button onClick={send}
-          className="w-9 h-9 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-          <span className="text-white font-bold text-sm">↑</span>
-        </button>
       </div>
     </div>
   );
 }
 
 // ============================================================
-// ÉVÉNEMENTS DU GROUPE
+// EVENTS TAB (uses global events table)
 // ============================================================
-function GroupEvents({ groupId, userId }: { groupId: string; userId?: string }) {
-  const events = MOCK_EVENTS[groupId] || [];
-  const [localEvents, setLocalEvents] = useState(events);
+function GroupEventsTab() {
+  const { user } = useAuth();
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newDate, setNewDate] = useState("");
-  const [newLocation, setNewLocation] = useState("");
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState("");
+  const [desc, setDesc] = useState("");
 
-  const rsvp = (eventId: string, status: string) => {
-    setLocalEvents(prev => prev.map(e =>
-      e.id === eventId ? { ...e, my_rsvp: status, rsvp_count: (e.rsvp_count || 0) + (e.my_rsvp ? 0 : 1) } : e
-    ));
-  };
+  const fetchEvents = useCallback(async () => {
+    const { data } = await supabase.from("events").select("*").order("event_date", { ascending: true });
+    setEvents(data || []);
+    setLoading(false);
+  }, []);
 
-  const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-    going:     { label: "Je viens ✓",   color: "#059669", bg: "#ECFDF5" },
-    maybe:     { label: "Peut-être",    color: "#D97706", bg: "#FFFBEB" },
-    not_going: { label: "Absent",       color: "#DC2626", bg: "#FEF2F2" },
+  useEffect(() => { fetchEvents(); }, [fetchEvents]);
+
+  const createEvent = async () => {
+    if (!title.trim() || !date || !user) return;
+    const { error } = await supabase.from("events").insert({
+      title: title.trim(), event_date: date, description: desc || null, created_by: user.id,
+    });
+    if (!error) {
+      setTitle(""); setDate(""); setDesc(""); setShowNew(false);
+      fetchEvents();
+    }
   };
 
   return (
     <div className="px-4 pt-4 pb-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-sm text-foreground">Événements du groupe</h3>
+        <h3 className="font-semibold text-sm text-foreground">Événements</h3>
         <button onClick={() => setShowNew(!showNew)}
           className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-semibold">
           <Plus className="w-3.5 h-3.5" /> Créer
         </button>
       </div>
 
-      {/* Formulaire création */}
       {showNew && (
         <div className="bg-card border border-border/50 rounded-xl p-4 space-y-3">
-          <p className="text-sm font-semibold text-foreground">Nouvel événement</p>
-          <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Titre de l'événement"
+          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Titre"
             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm outline-none" />
-          <input type="datetime-local" value={newDate} onChange={e => setNewDate(e.target.value)}
+          <input type="datetime-local" value={date} onChange={e => setDate(e.target.value)}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm outline-none" />
-          <input value={newLocation} onChange={e => setNewLocation(e.target.value)} placeholder="Lieu"
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm outline-none" />
+          <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Description..."
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm outline-none resize-none" rows={2} />
           <div className="flex gap-2">
             <button onClick={() => setShowNew(false)} className="flex-1 py-2 rounded-lg border border-border text-sm text-muted-foreground">Annuler</button>
-            <button onClick={() => {
-              if (!newTitle || !newDate) return;
-              setLocalEvents(prev => [...prev, { id: Date.now().toString(), title: newTitle, description: "", location: newLocation, event_date: newDate, rsvp_count: 0 }]);
-              setNewTitle(""); setNewDate(""); setNewLocation(""); setShowNew(false);
-            }} className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold">
-              Créer
-            </button>
+            <button onClick={createEvent} className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold">Créer</button>
           </div>
         </div>
       )}
 
-      {/* Liste événements */}
-      {localEvents.length === 0 ? (
-        <div className="flex flex-col items-center py-12 text-center">
-          <span className="text-4xl mb-3">📅</span>
-          <p className="font-semibold text-foreground">Aucun événement</p>
-          <p className="text-sm text-muted-foreground mt-1">Crée le premier événement du groupe !</p>
+      {loading ? (
+        <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+      ) : events.length === 0 ? (
+        <div className="text-center py-12">
+          <Calendar className="w-10 h-10 mx-auto text-muted-foreground/30 mb-3" />
+          <p className="text-muted-foreground text-sm">Aucun événement</p>
         </div>
-      ) : localEvents.map(ev => {
-        const sc = ev.my_rsvp ? statusConfig[ev.my_rsvp] : null;
-        return (
-          <div key={ev.id} className="bg-card border border-border/50 rounded-2xl p-4 shadow-sm">
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <h4 className="font-bold text-sm text-foreground">{ev.title}</h4>
-              {sc && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-                  style={{ color: sc.color, backgroundColor: sc.bg }}>{sc.label}</span>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mb-1">📅 {formatDate(ev.event_date)}</p>
-            {ev.location && <p className="text-xs text-muted-foreground mb-3">📍 {ev.location}</p>}
-            {ev.description && <p className="text-xs text-foreground mb-3">{ev.description}</p>}
-            <p className="text-xs text-muted-foreground mb-3">{ev.rsvp_count} participant(s)</p>
-            <div className="flex gap-2">
-              {[
-                { k: "going",     l: "Je viens ✓" },
-                { k: "maybe",     l: "Peut-être"  },
-                { k: "not_going", l: "Absent"     },
-              ].map(s => (
-                <button key={s.k} onClick={() => rsvp(ev.id, s.k)}
-                  className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-all
-                    ${ev.my_rsvp === s.k ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}>
-                  {s.l}
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-      })}
+      ) : events.map(ev => (
+        <div key={ev.id} className="bg-card border border-border/50 rounded-2xl p-4 shadow-sm">
+          <h4 className="font-bold text-sm text-foreground mb-1">{ev.title}</h4>
+          <p className="text-xs text-muted-foreground mb-1">📅 {formatDate(ev.event_date)}</p>
+          {ev.description && <p className="text-xs text-muted-foreground">{ev.description}</p>}
+        </div>
+      ))}
     </div>
   );
 }
 
 // ============================================================
-// PROJETS DU GROUPE
+// PROJECTS TAB (uses global projects table)
 // ============================================================
-function GroupProjects({ groupId }: { groupId: string }) {
-  const projects = MOCK_PROJECTS[groupId] || [];
-  const [localProjects, setLocalProjects] = useState(projects);
+function GroupProjectsTab() {
+  const { user } = useAuth();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newDesc, setNewDesc] = useState("");
+  const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState("");
+  const [category, setCategory] = useState("community");
+
+  const fetchProjects = useCallback(async () => {
+    const { data } = await supabase.from("projects").select("*").order("created_at", { ascending: false });
+    setProjects(data || []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchProjects(); }, [fetchProjects]);
+
+  const createProject = async () => {
+    if (!title.trim() || !user) return;
+    const { error } = await supabase.from("projects").insert({
+      title: title.trim(), description: desc || null, category, created_by: user.id,
+    });
+    if (!error) {
+      setTitle(""); setDesc(""); setShowNew(false);
+      fetchProjects();
+    }
+  };
 
   const statusConf: Record<string, { label: string; color: string; bg: string }> = {
-    planifie:  { label: "Planifié",   color: "#2258B8", bg: "#EEF5FD" },
     en_cours:  { label: "En cours",   color: "#D97706", bg: "#FFFBEB" },
     termine:   { label: "Terminé ✓", color: "#059669", bg: "#ECFDF5" },
+    en_attente: { label: "En attente", color: "#6B7280", bg: "#F3F4F6" },
   };
 
   return (
     <div className="px-4 pt-4 pb-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-sm text-foreground">Projets du groupe</h3>
+        <h3 className="font-semibold text-sm text-foreground">Projets</h3>
         <button onClick={() => setShowNew(!showNew)}
           className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-semibold">
           <Plus className="w-3.5 h-3.5" /> Nouveau
@@ -540,172 +421,64 @@ function GroupProjects({ groupId }: { groupId: string }) {
 
       {showNew && (
         <div className="bg-card border border-border/50 rounded-xl p-4 space-y-3">
-          <p className="text-sm font-semibold text-foreground">Nouveau projet</p>
-          <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Titre du projet"
+          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Titre du projet"
             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm outline-none" />
-          <textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Description..."
+          <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Description..."
             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm outline-none resize-none" rows={2} />
           <div className="flex gap-2">
+            <button onClick={() => setCategory("community")}
+              className={`flex-1 py-2 rounded-lg text-xs font-medium ${category === "community" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+              🤝 Communautaire
+            </button>
+            <button onClick={() => setCategory("business")}
+              className={`flex-1 py-2 rounded-lg text-xs font-medium ${category === "business" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+              💼 Entreprise
+            </button>
+          </div>
+          <div className="flex gap-2">
             <button onClick={() => setShowNew(false)} className="flex-1 py-2 rounded-lg border border-border text-sm text-muted-foreground">Annuler</button>
-            <button onClick={() => {
-              if (!newTitle) return;
-              setLocalProjects(prev => [...prev, { id: Date.now().toString(), title: newTitle, description: newDesc, status: "planifie", created_at: new Date().toISOString() }]);
-              setNewTitle(""); setNewDesc(""); setShowNew(false);
-            }} className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold">Créer</button>
+            <button onClick={createProject} className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold">Créer</button>
           </div>
         </div>
       )}
 
-      {localProjects.length === 0 ? (
-        <div className="flex flex-col items-center py-12 text-center">
-          <span className="text-4xl mb-3">💼</span>
-          <p className="font-semibold text-foreground">Aucun projet</p>
-          <p className="text-sm text-muted-foreground mt-1">Lance le premier projet du groupe !</p>
+      {loading ? (
+        <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+      ) : projects.length === 0 ? (
+        <div className="text-center py-12">
+          <Briefcase className="w-10 h-10 mx-auto text-muted-foreground/30 mb-3" />
+          <p className="text-muted-foreground text-sm">Aucun projet</p>
         </div>
-      ) : localProjects.map(p => {
-        const sc = statusConf[p.status] || statusConf["planifie"];
+      ) : projects.map(p => {
+        const sc = statusConf[p.status] || { label: p.status, color: "#6B7280", bg: "#F3F4F6" };
         return (
           <div key={p.id} className="bg-card border border-border/50 rounded-2xl p-4 shadow-sm">
             <div className="flex items-start justify-between gap-2 mb-2">
               <h4 className="font-bold text-sm text-foreground">{p.title}</h4>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
                 style={{ color: sc.color, backgroundColor: sc.bg }}>{sc.label}</span>
             </div>
-            {p.description && <p className="text-xs text-muted-foreground mb-3">{p.description}</p>}
-            <p className="text-[10px] text-muted-foreground">Créé {timeAgo(p.created_at)}</p>
-            <div className="flex gap-2 mt-3">
-              {["planifie", "en_cours", "termine"].map(s => {
-                const c = statusConf[s];
-                return (
-                  <button key={s} onClick={() => setLocalProjects(prev => prev.map(pr => pr.id === p.id ? { ...pr, status: s } : pr))}
-                    className={`flex-1 py-1.5 rounded-lg text-[10px] font-semibold border transition-all
-                      ${p.status === s ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}>
-                    {c.label}
-                  </button>
-                );
-              })}
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                p.category === "business" ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30" : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30"
+              }`}>
+                {p.category === "business" ? "💼 Entreprise" : "🤝 Communautaire"}
+              </span>
             </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ============================================================
-// SONDAGES DU GROUPE
-// ============================================================
-function GroupPolls({ groupId, userId }: { groupId: string; userId?: string }) {
-  const polls = MOCK_POLLS[groupId] || [];
-  const [localPolls, setLocalPolls] = useState(polls);
-  const [showNew, setShowNew] = useState(false);
-  const [newQuestion, setNewQuestion] = useState("");
-  const [newOptions, setNewOptions] = useState(["", ""]);
-
-  const vote = (pollId: string, optionId: string) => {
-    setLocalPolls(prev => prev.map(p => {
-      if (p.id !== pollId || p.my_vote) return p;
-      return {
-        ...p, my_vote: optionId,
-        options: p.options.map(o => o.id === optionId ? { ...o, votes: o.votes + 1 } : o),
-      };
-    }));
-  };
-
-  const addPoll = () => {
-    const opts = newOptions.filter(o => o.trim());
-    if (!newQuestion.trim() || opts.length < 2) return;
-    setLocalPolls(prev => [...prev, {
-      id: Date.now().toString(),
-      question: newQuestion,
-      ends_at: new Date(Date.now() + 7 * 86400000).toISOString(),
-      my_vote: undefined,
-      options: opts.map((t, i) => ({ id: `new-${i}`, text: t, votes: 0 })),
-    }]);
-    setNewQuestion(""); setNewOptions(["", ""]); setShowNew(false);
-  };
-
-  return (
-    <div className="px-4 pt-4 pb-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-sm text-foreground">Sondages</h3>
-        <button onClick={() => setShowNew(!showNew)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-semibold">
-          <Plus className="w-3.5 h-3.5" /> Créer
-        </button>
-      </div>
-
-      {showNew && (
-        <div className="bg-card border border-border/50 rounded-xl p-4 space-y-3">
-          <p className="text-sm font-semibold text-foreground">Nouveau sondage</p>
-          <input value={newQuestion} onChange={e => setNewQuestion(e.target.value)}
-            placeholder="Question du sondage..."
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm outline-none" />
-          <p className="text-xs text-muted-foreground font-medium">Options de réponse</p>
-          {newOptions.map((opt, i) => (
-            <input key={i} value={opt} onChange={e => setNewOptions(prev => prev.map((o, j) => j === i ? e.target.value : o))}
-              placeholder={`Option ${i + 1}`}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm outline-none" />
-          ))}
-          <button onClick={() => setNewOptions(prev => [...prev, ""])}
-            className="text-xs text-primary font-semibold">+ Ajouter une option</button>
-          <div className="flex gap-2">
-            <button onClick={() => setShowNew(false)} className="flex-1 py-2 rounded-lg border border-border text-sm text-muted-foreground">Annuler</button>
-            <button onClick={addPoll} className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold">Publier</button>
-          </div>
-        </div>
-      )}
-
-      {localPolls.length === 0 ? (
-        <div className="flex flex-col items-center py-12 text-center">
-          <span className="text-4xl mb-3">📊</span>
-          <p className="font-semibold text-foreground">Aucun sondage</p>
-          <p className="text-sm text-muted-foreground mt-1">Lance un vote pour le groupe !</p>
-        </div>
-      ) : localPolls.map(poll => {
-        const totalVotes = poll.options.reduce((s, o) => s + o.votes, 0);
-        const hasVoted = !!poll.my_vote;
-        return (
-          <div key={poll.id} className="bg-card border border-border/50 rounded-2xl p-4 shadow-sm">
-            <p className="font-bold text-sm text-foreground mb-1">{poll.question}</p>
-            <p className="text-[10px] text-muted-foreground mb-4">
-              {totalVotes} vote(s) · Expire {timeAgo(poll.ends_at)} restant
-            </p>
-            <div className="space-y-2">
-              {poll.options.map(opt => {
-                const pct = totalVotes > 0 ? Math.round((opt.votes / totalVotes) * 100) : 0;
-                const isMyVote = poll.my_vote === opt.id;
-                return (
-                  <button key={opt.id} onClick={() => vote(poll.id, opt.id)} disabled={hasVoted}
-                    className={`w-full text-left rounded-xl border transition-all overflow-hidden
-                      ${isMyVote ? "border-primary" : "border-border/50 hover:border-primary/30"}`}>
-                    <div className="relative px-3 py-2.5">
-                      {/* Barre de progression */}
-                      {hasVoted && (
-                        <div className="absolute inset-0 rounded-xl"
-                          style={{ width: `${pct}%`, backgroundColor: isMyVote ? "rgba(26,75,155,0.12)" : "rgba(0,0,0,0.04)" }} />
-                      )}
-                      <div className="relative flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          {isMyVote && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
-                          <span className={`text-sm ${isMyVote ? "font-semibold text-primary" : "text-foreground"}`}>
-                            {opt.text}
-                          </span>
-                        </div>
-                        {hasVoted && (
-                          <span className={`text-xs font-bold flex-shrink-0 ${isMyVote ? "text-primary" : "text-muted-foreground"}`}>
-                            {pct}%
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            {!hasVoted && (
-              <p className="text-[10px] text-muted-foreground text-center mt-3">Appuie sur une option pour voter</p>
+            {p.description && <p className="text-xs text-muted-foreground mb-2">{p.description}</p>}
+            {p.budget_goal && (
+              <div className="mb-2">
+                <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                  <span>Budget</span>
+                  <span>{p.budget_current || 0} / {p.budget_goal} FCFA</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full rounded-full bg-primary transition-all"
+                    style={{ width: `${Math.min(100, ((p.budget_current || 0) / p.budget_goal) * 100)}%` }} />
+                </div>
+              </div>
             )}
+            {p.deadline && <p className="text-[10px] text-muted-foreground">📅 Échéance: {new Date(p.deadline).toLocaleDateString("fr")}</p>}
           </div>
         );
       })}
@@ -719,7 +492,46 @@ function GroupPolls({ groupId, userId }: { groupId: string; userId?: string }) {
 export default function Groups() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+
+  const fetchGroups = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true); else setLoading(true);
+    const { data: groupsData } = await supabase.from("groups").select("*");
+    if (!groupsData) { setLoading(false); setRefreshing(false); return; }
+    const { data: members } = await supabase.from("group_members").select("group_id, profile_id");
+    const enriched: Group[] = groupsData.map(g => ({
+      ...g,
+      member_count: members?.filter(m => m.group_id === g.id).length || 0,
+      is_member: !!members?.find(m => m.group_id === g.id && m.profile_id === user?.id),
+    }));
+    setGroups(enriched);
+    setLoading(false);
+    setRefreshing(false);
+  }, [user]);
+
+  useEffect(() => { if (user) fetchGroups(); else setLoading(false); }, [user, fetchGroups]);
+
+  const createGroup = async (name: string, visibility: string) => {
+    if (!user) { navigate("/auth"); return; }
+    const { data, error } = await supabase.from("groups").insert({
+      name, visibility, created_by: user.id,
+    }).select().single();
+    if (data && !error) {
+      await supabase.from("group_members").insert({ group_id: data.id, profile_id: user.id });
+      setShowCreate(false);
+      fetchGroups();
+    }
+  };
+
+  const joinGroup = async (groupId: string) => {
+    if (!user) { navigate("/auth"); return; }
+    await supabase.from("group_members").insert({ group_id: groupId, profile_id: user.id });
+    fetchGroups();
+  };
 
   if (!user) {
     return (
@@ -734,7 +546,7 @@ export default function Groups() {
   }
 
   if (selectedGroup) {
-    return <GroupSpace group={selectedGroup} onBack={() => setSelectedGroup(null)} />;
+    return <GroupSpace group={selectedGroup} onBack={() => { setSelectedGroup(null); fetchGroups(); }} />;
   }
 
   return (
@@ -742,10 +554,16 @@ export default function Groups() {
       <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-lg border-b border-border/50">
         <div className="max-w-lg mx-auto px-4 py-3">
           <h1 className="font-bold text-xl text-foreground">Communauté</h1>
-          <p className="text-xs text-muted-foreground">Clique sur un groupe pour l'ouvrir</p>
+          <p className="text-xs text-muted-foreground">Groupes, événements et projets</p>
         </div>
       </header>
-      <GroupListView onSelect={setSelectedGroup} />
+      <GroupListView
+        groups={groups} loading={loading}
+        onSelect={setSelectedGroup} onJoin={joinGroup}
+        onRefresh={() => fetchGroups(true)} refreshing={refreshing}
+        onShowCreate={() => setShowCreate(true)}
+      />
+      {showCreate && <CreateGroupModal onClose={() => setShowCreate(false)} onCreate={createGroup} />}
     </div>
   );
 }
