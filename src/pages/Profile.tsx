@@ -91,7 +91,7 @@ export default function Profile() {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("full_name, username, avatar_url, points_total, streak_days, role, quartier")
+      .select("full_name, username, avatar_url, points_total")
       .eq("id", user.id)
       .single()
       .then(({ data }) => {
@@ -99,9 +99,6 @@ export default function Profile() {
           setFullName(data.full_name || "");
           setUsername(data.username || "");
           setPoints(data.points_total || 0);
-          setStreakDays(data.streak_days || 0);
-          setRole(data.role || "membre");
-          setQuartier(data.quartier || "");
         }
       });
   }, [user]);
