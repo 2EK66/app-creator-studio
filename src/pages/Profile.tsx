@@ -223,14 +223,6 @@ export default function Profile() {
             <h2 className="font-bold text-xl text-foreground mt-3">{fullName || "Utilisateur"}</h2>
             {username && <p className="text-sm text-muted-foreground">@{username}</p>}
             <p className="text-xs text-muted-foreground mt-1">{user.email}</p>
-            {quartier && <p className="text-xs text-muted-foreground">📍 {quartier}</p>}
-            {role !== "membre" && (
-              <span className="mt-2 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
-                {role === "pasteur" ? "⛪ Pasteur"
-                 : role === "diacre" ? "🤝 Diacre"
-                 : role === "admin" ? "🛡 Admin" : role}
-              </span>
-            )}
           </>
         ) : (
           <div className="w-full mt-4 space-y-3">
