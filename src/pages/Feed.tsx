@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { NewPostModal } from "@/components/mirec/NewPostModal";
 import { MirecLogo } from "@/components/mirec/MirecLogo";
 import { MirecAvatar } from "@/components/mirec/Avatar";
-import { Plus, Bell, RefreshCw, MessageCircle } from "lucide-react";
+import { Plus, Bell, RefreshCw, MoreVertical, Pencil, Trash2, X, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -46,6 +46,9 @@ export default function Feed() {
   const [refreshing, setRefreshing] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [filter, setFilter] = useState<string>("all");
+  const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const [editingPost, setEditingPost] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
 
   const filters = [
     { key: "all", label: "Tout" },
@@ -66,7 +69,6 @@ export default function Feed() {
 
     if (!postsData) { setLoading(false); setRefreshing(false); return; }
 
-    // Fetch author profiles
     const authorIds = [...new Set(postsData.map(p => p.author_id))];
     const { data: profiles } = await supabase
       .from("profiles")
@@ -74,7 +76,6 @@ export default function Feed() {
       .in("id", authorIds);
     const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p.full_name || "Anonyme"]));
 
-    // Fetch reactions for all posts
     const postIds = postsData.map(p => p.id);
     const { data: allReactions } = await supabase
       .from("reactions")
@@ -114,7 +115,6 @@ export default function Feed() {
     if (!post) return;
     const wasActive = post.user_reactions[key];
 
-    // Optimistic update
     setPosts(prev => prev.map(p => {
       if (p.id !== postId) return p;
       return {
@@ -137,20 +137,35 @@ export default function Feed() {
   const handleNewPost = async (data: { content: string; type: string }) => {
     if (!user) { navigate("/auth"); return; }
     const { error } = await supabase.from("posts").insert({
-      content: data.content,
-      type: data.type,
-      author_id: user.id,
+      content: data.content, type: data.type, author_id: user.id,
     });
-    if (!error) {
-      fetchPosts(); // Refresh to show the new post
-    }
+    if (!error) fetchPosts();
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    setPosts(prev => prev.filter(p => p.id !== postId));
+    setMenuOpen(null);
+    await supabase.from("reactions").delete().eq("content_id", postId);
+    await supabase.from("posts").delete().eq("id", postId);
+  };
+
+  const startEdit = (post: FeedPost) => {
+    setEditingPost(post.id);
+    setEditContent(post.content);
+    setMenuOpen(null);
+  };
+
+  const saveEdit = async (postId: string) => {
+    if (!editContent.trim()) return;
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, content: editContent.trim() } : p));
+    setEditingPost(null);
+    await supabase.from("posts").update({ content: editContent.trim() }).eq("id", postId);
   };
 
   const filtered = filter === "all" ? posts : posts.filter(p => p.type === filter);
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
       <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-lg border-b border-border/50 px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -169,7 +184,6 @@ export default function Feed() {
         </div>
       </header>
 
-      {/* Filters */}
       <div className="sticky top-[61px] z-20 bg-background/80 backdrop-blur-md px-4 py-2.5 border-b border-border/30">
         <div className="max-w-lg mx-auto flex gap-2 overflow-x-auto no-scrollbar">
           {filters.map((f) => (
@@ -185,7 +199,6 @@ export default function Feed() {
         </div>
       </div>
 
-      {/* Posts */}
       <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
         {loading ? (
           <div className="flex justify-center py-12">
@@ -197,9 +210,11 @@ export default function Feed() {
           </div>
         ) : filtered.map((post) => {
           const tc = typeConfig(post.type);
+          const isAuthor = user?.id === post.author_id;
+          const isEditing = editingPost === post.id;
+
           return (
             <div key={post.id} className="bg-card border border-border/50 rounded-2xl p-4 shadow-sm">
-              {/* Author */}
               <div className="flex items-center gap-3 mb-3">
                 <MirecAvatar initials={post.author_initials} color="hsl(220 70% 35%)" size={40} />
                 <div className="flex-1">
@@ -209,12 +224,51 @@ export default function Feed() {
                 <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${tc.textClass} ${tc.bgClass}`}>
                   {tc.label}
                 </span>
+                {isAuthor && (
+                  <div className="relative">
+                    <button onClick={() => setMenuOpen(menuOpen === post.id ? null : post.id)}
+                      className="p-1.5 rounded-full hover:bg-muted transition-colors">
+                      <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                    {menuOpen === post.id && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(null)} />
+                        <div className="absolute right-0 top-8 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[140px]">
+                          <button onClick={() => startEdit(post)}
+                            className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-foreground hover:bg-muted transition-colors">
+                            <Pencil className="w-3.5 h-3.5" /> Modifier
+                          </button>
+                          <button onClick={() => handleDeletePost(post.id)}
+                            className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" /> Supprimer
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Content */}
-              <p className="text-sm text-foreground leading-relaxed mb-4">{post.content}</p>
+              {isEditing ? (
+                <div className="mb-4 space-y-2">
+                  <textarea value={editContent} onChange={e => setEditContent(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                    rows={3} />
+                  <div className="flex gap-2 justify-end">
+                    <button onClick={() => setEditingPost(null)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-muted">
+                      <X className="w-3.5 h-3.5" /> Annuler
+                    </button>
+                    <button onClick={() => saveEdit(post.id)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs bg-primary text-primary-foreground font-medium">
+                      <Check className="w-3.5 h-3.5" /> Enregistrer
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-foreground leading-relaxed mb-4">{post.content}</p>
+              )}
 
-              {/* Reactions */}
               <div className="flex gap-2 pt-3 border-t border-border/30">
                 {([
                   { key: "amen" as const, emoji: "🙏", label: "Amen" },
@@ -237,7 +291,6 @@ export default function Feed() {
         })}
       </div>
 
-      {/* FAB */}
       <button onClick={() => { if (!user) { navigate("/auth"); return; } setShowNew(true); }}
         className="fixed bottom-20 right-4 sm:right-[calc(50%-224px)] w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-xl flex items-center justify-center hover:scale-105 transition-transform z-30">
         <Plus className="w-6 h-6" />
