@@ -142,24 +142,74 @@ export type Database = {
         }
         Relationships: []
       }
+      group_events: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          event_date: string
+          group_id: string | null
+          id: string
+          location: string | null
+          max_attendees: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          event_date: string
+          group_id?: string | null
+          id?: string
+          location?: string | null
+          max_attendees?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          event_date?: string
+          group_id?: string | null
+          id?: string
+          location?: string | null
+          max_attendees?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_events_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_members: {
         Row: {
           group_id: string | null
           id: string
           joined_at: string | null
           profile_id: string | null
+          role: string | null
         }
         Insert: {
           group_id?: string | null
           id?: string
           joined_at?: string | null
           profile_id?: string | null
+          role?: string | null
         }
         Update: {
           group_id?: string | null
           id?: string
           joined_at?: string | null
           profile_id?: string | null
+          role?: string | null
         }
         Relationships: [
           {
@@ -196,6 +246,88 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "group_messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_polls: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          ends_at: string | null
+          group_id: string | null
+          id: string
+          is_closed: boolean | null
+          question: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          ends_at?: string | null
+          group_id?: string | null
+          id?: string
+          is_closed?: boolean | null
+          question: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          ends_at?: string | null
+          group_id?: string | null
+          id?: string
+          is_closed?: boolean | null
+          question?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_polls_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_projects: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          group_id: string | null
+          id: string
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          group_id?: string | null
+          id?: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          group_id?: string | null
+          id?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_projects_group_id_fkey"
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "groups"
@@ -251,24 +383,102 @@ export type Database = {
         }
         Relationships: []
       }
+      poll_options: {
+        Row: {
+          id: string
+          poll_id: string | null
+          position: number | null
+          text: string
+        }
+        Insert: {
+          id?: string
+          poll_id?: string | null
+          position?: number | null
+          text: string
+        }
+        Update: {
+          id?: string
+          poll_id?: string | null
+          position?: number | null
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_options_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "group_polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poll_votes: {
+        Row: {
+          created_at: string | null
+          id: string
+          option_id: string | null
+          poll_id: string | null
+          profile_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          option_id?: string | null
+          poll_id?: string | null
+          profile_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          option_id?: string | null
+          poll_id?: string | null
+          profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_votes_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "poll_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poll_votes_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "poll_results"
+            referencedColumns: ["option_id"]
+          },
+          {
+            foreignKeyName: "poll_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "group_polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           author_id: string
           content: string
           created_at: string | null
           id: string
+          type: string | null
         }
         Insert: {
           author_id: string
           content: string
           created_at?: string | null
           id?: string
+          type?: string | null
         }
         Update: {
           author_id?: string
           content?: string
           created_at?: string | null
           id?: string
+          type?: string | null
         }
         Relationships: []
       }
@@ -327,6 +537,41 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_tasks: {
+        Row: {
+          assigned_to: string | null
+          created_at: string | null
+          id: string
+          is_done: boolean | null
+          project_id: string | null
+          title: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string | null
+          id?: string
+          is_done?: boolean | null
+          project_id?: string | null
+          title: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string | null
+          id?: string
+          is_done?: boolean | null
+          project_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "group_projects"
             referencedColumns: ["id"]
           },
         ]
@@ -426,7 +671,63 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      group_events_with_rsvp: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          event_date: string | null
+          going_count: number | null
+          group_id: string | null
+          id: string | null
+          location: string | null
+          max_attendees: number | null
+          maybe_count: number | null
+          not_going_count: number | null
+          title: string | null
+          total_rsvp: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_events_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poll_results: {
+        Row: {
+          created_by: string | null
+          ends_at: string | null
+          group_id: string | null
+          is_closed: boolean | null
+          option_id: string | null
+          poll_id: string | null
+          position: number | null
+          question: string | null
+          text: string | null
+          vote_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_polls_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poll_options_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "group_polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
