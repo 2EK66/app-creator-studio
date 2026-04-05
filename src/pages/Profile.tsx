@@ -251,11 +251,10 @@ export default function Profile() {
       </div>
 
       {/* ======== STATS RAPIDES ======== */}
-      <div className="grid grid-cols-4 gap-2 mb-5">
+      <div className="grid grid-cols-3 gap-2 mb-5">
         {[
           { val: posts.length,       label: "Posts"   },
           { val: points,             label: "Points"  },
-          { val: `${streakDays}🔥`,  label: "Streak"  },
           { val: badges.length,      label: "Badges"  },
         ].map((s, i) => (
           <div key={i} className="bg-card border border-border/50 rounded-xl p-3 text-center shadow-sm">
