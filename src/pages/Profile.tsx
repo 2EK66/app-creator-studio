@@ -77,9 +77,6 @@ export default function Profile() {
 
   // Données enrichies
   const [points, setPoints] = useState(0);
-  const [streakDays, setStreakDays] = useState(0);
-  const [role, setRole] = useState("membre");
-  const [quartier, setQuartier] = useState("");
   const [posts, setPosts] = useState<any[]>([]);
   const [badges, setBadges] = useState<any[]>([]);
   const [pointsLog, setPointsLog] = useState<any[]>([]);
@@ -91,7 +88,7 @@ export default function Profile() {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("full_name, username, avatar_url, points_total, streak_days, role, quartier")
+      .select("full_name, username, avatar_url, points_total")
       .eq("id", user.id)
       .single()
       .then(({ data }) => {
@@ -99,9 +96,6 @@ export default function Profile() {
           setFullName(data.full_name || "");
           setUsername(data.username || "");
           setPoints(data.points_total || 0);
-          setStreakDays(data.streak_days || 0);
-          setRole(data.role || "membre");
-          setQuartier(data.quartier || "");
         }
       });
   }, [user]);
@@ -123,7 +117,7 @@ export default function Profile() {
           const { data: rx } = await supabase
             .from("reactions")
             .select("type")
-            .eq("post_id", post.id);
+            .eq("content_id", post.id);
           const r = { amen: 0, feu: 0, coeur: 0 };
           rx?.forEach((x: any) => { if (x.type in r) r[x.type as keyof typeof r]++; });
           return { ...post, reactions: r };
@@ -229,14 +223,6 @@ export default function Profile() {
             <h2 className="font-bold text-xl text-foreground mt-3">{fullName || "Utilisateur"}</h2>
             {username && <p className="text-sm text-muted-foreground">@{username}</p>}
             <p className="text-xs text-muted-foreground mt-1">{user.email}</p>
-            {quartier && <p className="text-xs text-muted-foreground">📍 {quartier}</p>}
-            {role !== "membre" && (
-              <span className="mt-2 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
-                {role === "pasteur" ? "⛪ Pasteur"
-                 : role === "diacre" ? "🤝 Diacre"
-                 : role === "admin" ? "🛡 Admin" : role}
-              </span>
-            )}
           </>
         ) : (
           <div className="w-full mt-4 space-y-3">
@@ -265,11 +251,10 @@ export default function Profile() {
       </div>
 
       {/* ======== STATS RAPIDES ======== */}
-      <div className="grid grid-cols-4 gap-2 mb-5">
+      <div className="grid grid-cols-3 gap-2 mb-5">
         {[
           { val: posts.length,       label: "Posts"   },
           { val: points,             label: "Points"  },
-          { val: `${streakDays}🔥`,  label: "Streak"  },
           { val: badges.length,      label: "Badges"  },
         ].map((s, i) => (
           <div key={i} className="bg-card border border-border/50 rounded-xl p-3 text-center shadow-sm">
