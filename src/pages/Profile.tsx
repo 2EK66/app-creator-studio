@@ -77,9 +77,6 @@ export default function Profile() {
 
   // Données enrichies
   const [points, setPoints] = useState(0);
-  const [streakDays, setStreakDays] = useState(0);
-  const [role, setRole] = useState("membre");
-  const [quartier, setQuartier] = useState("");
   const [posts, setPosts] = useState<any[]>([]);
   const [badges, setBadges] = useState<any[]>([]);
   const [pointsLog, setPointsLog] = useState<any[]>([]);
