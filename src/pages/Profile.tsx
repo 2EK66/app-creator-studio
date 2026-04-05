@@ -120,7 +120,7 @@ export default function Profile() {
           const { data: rx } = await supabase
             .from("reactions")
             .select("type")
-            .eq("post_id", post.id);
+            .eq("content_id", post.id);
           const r = { amen: 0, feu: 0, coeur: 0 };
           rx?.forEach((x: any) => { if (x.type in r) r[x.type as keyof typeof r]++; });
           return { ...post, reactions: r };
