@@ -3,6 +3,7 @@ import { NewPostModal } from "@/components/mirec/NewPostModal";
 import { MirecLogo } from "@/components/mirec/MirecLogo";
 import { MirecAvatar } from "@/components/mirec/Avatar";
 import { Plus, Bell, RefreshCw, MoreVertical, Pencil, Trash2, X, Check } from "lucide-react";
+import { FeedCommentSection } from "@/components/mirec/FeedCommentSection";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -82,6 +83,16 @@ export default function Feed() {
       .select("content_id, type, author_id")
       .in("content_id", postIds);
 
+    const { data: allComments } = await supabase
+      .from("comments")
+      .select("post_id")
+      .in("post_id", postIds);
+
+    const commentCounts: Record<string, number> = {};
+    (allComments || []).forEach(c => {
+      if (c.post_id) commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1;
+    });
+
     const enriched: FeedPost[] = postsData.map(post => {
       const postReactions = allReactions?.filter(r => r.content_id === post.id) || [];
       const reactions = { amen: 0, feu: 0, coeur: 0 };
@@ -98,7 +109,7 @@ export default function Feed() {
         author_initials: name.slice(0, 2).toUpperCase(),
         reactions,
         user_reactions,
-        comments_count: 0,
+        comments_count: commentCounts[post.id] || 0,
       };
     });
 
@@ -286,6 +297,13 @@ export default function Feed() {
                   </button>
                 ))}
               </div>
+
+              <FeedCommentSection
+                postId={post.id}
+                commentsCount={post.comments_count}
+                userId={user?.id}
+                postAuthorId={post.author_id}
+              />
             </div>
           );
         })}
