@@ -3,6 +3,7 @@ import { NewPostModal } from "@/components/mirec/NewPostModal";
 import { MirecLogo } from "@/components/mirec/MirecLogo";
 import { MirecAvatar } from "@/components/mirec/Avatar";
 import { Plus, Bell, RefreshCw, MoreVertical, Pencil, Trash2, X, Check } from "lucide-react";
+import { FeedCommentSection } from "@/components/mirec/FeedCommentSection";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -286,6 +287,13 @@ export default function Feed() {
                   </button>
                 ))}
               </div>
+
+              <FeedCommentSection
+                postId={post.id}
+                commentsCount={post.comments_count}
+                userId={user?.id}
+                postAuthorId={post.author_id}
+              />
             </div>
           );
         })}
