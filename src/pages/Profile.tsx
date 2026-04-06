@@ -121,13 +121,13 @@ function SkillsSection({ userId }: { userId: string }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    supabase
-      .from("member_skills")
+    (supabase
+      .from("member_skills" as any)
       .select("*")
       .eq("profile_id", userId)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        if (data) setSkills(data);
+      .order("created_at", { ascending: false }) as any)
+      .then(({ data }: any) => {
+        if (data) setSkills(data as Skill[]);
         setLoading(false);
       });
   }, [userId]);
