@@ -6,6 +6,7 @@ import Groups from "./Groups";
 import Messages from "./Messages";
 import Placeholder from "./Placeholder";
 import Marketplace from "@/pages/Marketplace";
+
 export default function Index() {
   const [tab, setTab] = useState("feed");
 
