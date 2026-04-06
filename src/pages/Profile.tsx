@@ -121,13 +121,13 @@ function SkillsSection({ userId }: { userId: string }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    supabase
-      .from("member_skills")
+    (supabase
+      .from("member_skills" as any)
       .select("*")
       .eq("profile_id", userId)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        if (data) setSkills(data);
+      .order("created_at", { ascending: false }) as any)
+      .then(({ data }: any) => {
+        if (data) setSkills(data as Skill[]);
         setLoading(false);
       });
   }, [userId]);
@@ -139,13 +139,13 @@ function SkillsSection({ userId }: { userId: string }) {
   const addSkill = async () => {
     if (!newSkill.trim()) return;
     setSaving(true);
-    const { data, error } = await supabase
-      .from("member_skills")
+    const { data, error } = await (supabase
+      .from("member_skills" as any)
       .insert({ profile_id: userId, skill: newSkill.trim(), level: newLevel, description: newDesc.trim() || null })
       .select()
-      .single();
+      .single() as any);
     if (!error && data) {
-      setSkills(prev => [data, ...prev]);
+      setSkills(prev => [data as Skill, ...prev]);
       setNewSkill(""); setNewLevel("intermediaire"); setNewDesc("");
       setShowForm(false); setShowSuggestions(false);
     }
@@ -153,7 +153,7 @@ function SkillsSection({ userId }: { userId: string }) {
   };
 
   const deleteSkill = async (id: string) => {
-    await supabase.from("member_skills").delete().eq("id", id);
+    await (supabase.from("member_skills" as any).delete().eq("id", id) as any);
     setSkills(prev => prev.filter(s => s.id !== id));
   };
 
