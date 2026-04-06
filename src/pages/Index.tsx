@@ -5,7 +5,7 @@ import Profile from "./Profile";
 import Groups from "./Groups";
 import Messages from "./Messages";
 import Placeholder from "./Placeholder";
-import Marketplace from "@/pages/Marketplace";
+import Marketplace from "./Marketplace";
 
 export default function Index() {
   const [tab, setTab] = useState("feed");
@@ -17,6 +17,7 @@ export default function Index() {
       {tab === "inbox" && <Messages />}
       {tab === "louange" && <Placeholder title="Louange" />}
       {tab === "profil" && <Profile />}
+      {tab === "Marketplace" && <Marketplace/>}
       <BottomTabs active={tab} onChange={setTab} />
     </div>
   );
