@@ -41,6 +41,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "badges_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "skills_directory"
+            referencedColumns: ["profile_id"]
+          },
         ]
       }
       comments: {
@@ -359,6 +366,33 @@ export type Database = {
         }
         Relationships: []
       }
+      member_skills: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          level: string | null
+          profile_id: string | null
+          skill: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          level?: string | null
+          profile_id?: string | null
+          skill: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          level?: string | null
+          profile_id?: string | null
+          skill?: string
+        }
+        Relationships: []
+      }
       points_log: {
         Row: {
           action: string
@@ -669,6 +703,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_services: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          price_range: string | null
+          profile_id: string | null
+          title: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          price_range?: string | null
+          profile_id?: string | null
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          price_range?: string | null
+          profile_id?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       group_events_with_rsvp: {
@@ -727,6 +791,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      skills_directory: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          description: string | null
+          full_name: string | null
+          id: string | null
+          level: string | null
+          profile_id: string | null
+          skill: string | null
+          username: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
