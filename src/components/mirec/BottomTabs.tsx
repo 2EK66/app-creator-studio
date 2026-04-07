@@ -1,10 +1,11 @@
-import { Newspaper, Users, MessageCircle, Music, User } from "lucide-react";
+import { Newspaper, Users, MessageCircle, Music, Store, User} from "lucide-react";
 
 const tabs = [
   { key: "feed", label: "Feed", icon: Newspaper },
   { key: "groupes", label: "Groupes", icon: Users },
   { key: "inbox", label: "Messages", icon: MessageCircle },
   { key: "louange", label: "Louange", icon: Music },
+  { key: "marketplace", label: "Market", icon: Store }, 
   { key: "profil", label: "Profil", icon: User },
 ];
 
