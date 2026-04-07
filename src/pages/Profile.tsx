@@ -545,8 +545,18 @@ export default function Profile() {
           </div>
           <Switch checked={dark} onCheckedChange={toggleDark} />
         </div>
-        <SettingsRow icon={<Download className="w-4 h-4" />} label="Télécharger l'application" subtitle="Bientôt disponible (APK Android)"
-          onClick={() => window.open("https://github.com/2EK66/MIREC/releases", "_blank")} />
+       <SettingsRow 
+  icon={<Download className="w-4 h-4" />} 
+  label="Télécharger l'application" 
+  subtitle="Version 1.0 disponible (APK)"
+  onClick={() => {
+    const link = document.createElement('a');
+    link.href = "https://jafhpkbtxcmzufznnbxc.supabase.co/storage/v1/object/public/app-mirec./app-debug.apk";
+    link.download = "MIREC.apk";
+    link.target = "_blank";
+    link.click();
+  }} 
+/>
         <div className="border-b border-border/30" />
         <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-3.5 text-destructive hover:bg-destructive/5 transition-colors">
           <LogOut className="w-4 h-4" />
