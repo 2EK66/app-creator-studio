@@ -17,7 +17,7 @@ export default function Index() {
       {tab === "inbox" && <Messages />}
       {tab === "louange" && <Placeholder title="Louange" />}
       {tab === "profil" && <Profile />}
-      {tab === "Marketplace" && <Marketplace/>}
+      {tab === "marketplace" && <Marketplace />}
       <BottomTabs active={tab} onChange={setTab} />
     </div>
   );
