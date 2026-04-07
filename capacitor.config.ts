@@ -1,11 +1,12 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.06691f4606984ac3a8562b13a7ad8133',
+  appId: 'com.mirec.app', // L'ID est maintenant correct (pas de tirets)
   appName: 'MIREC',
   webDir: 'dist',
   server: {
-    url: 'https://06691f46-0698-4ac3-a856-2b13a7ad8133.lovableproject.com?forceHideBadge=true',
+    // On retire l'URL pour que Capacitor utilise les fichiers locaux du dossier 'dist'
+    androidScheme: 'https',
     cleartext: true,
   },
 };
