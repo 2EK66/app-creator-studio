@@ -63,18 +63,34 @@ export default function Feed() {
     if (isRefresh) setRefreshing(true); else setLoading(true);
 
     const { data: postsData } = await supabase
-      .from("posts")
-      .select("id, content, type, created_at, author_id")
-      .order("created_at", { ascending: false })
-      .limit(50);
+  .from("posts")
+  .select(`
+    id, 
+    content, 
+    type, 
+    created_at, 
+    author_id,
+    profiles:author_id (
+      full_name,
+      avatar_url
+    )
+  `)
+  .order("created_at", { ascending: false })
+  .limit(50);
 
     if (!postsData) { setLoading(false); setRefreshing(false); return; }
 
-    const authorIds = [...new Set(postsData.map(p => p.author_id))];
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", authorIds);
+    const profileMap = Object.fromEntries(
+  (postsData || []).map(post => [
+    post.author_id, 
+    {
+      full_name: post.profiles?.full_name || "Anonyme",
+      avatar_url: post.profiles?.avatar_url 
+        ? supabase.storage.from('avatars').getPublicUrl(post.profiles.avatar_url).data.publicUrl 
+        : null
+    }
+  ])
+);
     const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p.full_name || "Anonyme"]));
 
     const postIds = postsData.map(p => p.id);
