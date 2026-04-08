@@ -1,4 +1,3 @@
-// src/components/mirec/Avatar.tsx
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface MirecAvatarProps {
