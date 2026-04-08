@@ -354,6 +354,31 @@ export default function Profile() {
   };
 
   const handleSignOut = async () => { await signOut(); navigate("/auth"); };
+  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  try {
+    setUploading(true);
+    if (!event.target.files || event.target.files.length === 0) return;
+    const file = event.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${user?.id}-${Date.now()}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file);
+    if (uploadError) throw uploadError;
+const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: urlData.publicUrl })
+      .eq('id', user?.id);
+    if (updateError) throw updateError;
+    setAvatarUrl(urlData.publicUrl);
+  } catch (error) {
+    console.error("Erreur upload avatar:", error);
+    alert("Impossible de changer la photo. Réessaie plus tard.");
+  } finally {
+    setUploading(false);
+  }
+};
 
   if (!user) {
     return (
