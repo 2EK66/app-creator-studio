@@ -1,10 +1,11 @@
+// src/components/mirec/Avatar.tsx
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface MirecAvatarProps {
   initials: string;
-  color?: string;       // optionnel, valeur par défaut "hsl(220 70% 35%)"
-  size?: number;        // optionnel, 40 par défaut
-  url?: string | null;  // optionnel, pour l'avatar image
+  color?: string;
+  size?: number;
+  url?: string | null;
 }
 
 export function MirecAvatar({ initials, color, size = 40, url }: MirecAvatarProps) {
