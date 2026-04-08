@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { MirecLogo } from "@/components/mirec/MirecLogo";
@@ -280,7 +280,7 @@ export default function Profile() {
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null); // NOUVEAU
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [points, setPoints] = useState(0);
   const [posts, setPosts] = useState<any[]>([]);
@@ -288,6 +288,10 @@ export default function Profile() {
   const [pointsLog, setPointsLog] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"posts" | "competences" | "badges" | "points">("posts");
   const [loadingPosts, setLoadingPosts] = useState(true);
+  
+  // États pour l'upload d'avatar
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -296,7 +300,7 @@ export default function Profile() {
         if (data) {
           setFullName(data.full_name || "");
           setUsername(data.username || "");
-          setAvatarUrl(data.avatar_url || null); // NOUVEAU
+          setAvatarUrl(data.avatar_url || null);
           setPoints(data.points_total || 0);
         }
       });
@@ -354,31 +358,32 @@ export default function Profile() {
   };
 
   const handleSignOut = async () => { await signOut(); navigate("/auth"); };
+
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
-  try {
-    setUploading(true);
-    if (!event.target.files || event.target.files.length === 0) return;
-    const file = event.target.files[0];
-    const fileExt = file.name.split('.').pop();
-    const filePath = `${user?.id}-${Date.now()}.${fileExt}`;
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(filePath, file);
-    if (uploadError) throw uploadError;
-const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ avatar_url: urlData.publicUrl })
-      .eq('id', user?.id);
-    if (updateError) throw updateError;
-    setAvatarUrl(urlData.publicUrl);
-  } catch (error) {
-    console.error("Erreur upload avatar:", error);
-    alert("Impossible de changer la photo. Réessaie plus tard.");
-  } finally {
-    setUploading(false);
-  }
-};
+    try {
+      setUploading(true);
+      if (!event.target.files || event.target.files.length === 0) return;
+      const file = event.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user?.id}-${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: urlData.publicUrl })
+        .eq('id', user?.id);
+      if (updateError) throw updateError;
+      setAvatarUrl(urlData.publicUrl);
+    } catch (error) {
+      console.error("Erreur upload avatar:", error);
+      alert("Impossible de changer la photo. Réessaie plus tard.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   if (!user) {
     return (
@@ -402,18 +407,33 @@ const { error: updateError } = await supabase
 
   return (
     <div className="max-w-lg mx-auto pb-28 px-4 pt-6">
-      {/* HEADER */}
+      {/* HEADER avec avatar cliquable */}
       <div className="flex flex-col items-center mb-6">
-        <MirecAvatar
-          initials={(fullName || user.email || "U").slice(0, 2).toUpperCase()}
-          color="hsl(220 70% 35%)"
-          size={80}
-          url={avatarUrl}   // NOUVEAU : transmet l'URL de l'avatar
+        <div 
+          onClick={() => fileInputRef.current?.click()} 
+          className="cursor-pointer relative group"
+        >
+          <MirecAvatar
+            initials={(fullName || user.email || "U").slice(0, 2).toUpperCase()}
+            color="hsl(220 70% 35%)"
+            size={80}
+            url={avatarUrl}
+          />
+          {uploading && (
+            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+        </div>
+        
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={uploadAvatar}
+          style={{ display: 'none' }}
         />
 
-      {/* HEADER */}
-      <div className="flex flex-col items-center mb-6">
-        <MirecAvatar initials={(fullName || user.email || "U").slice(0, 2).toUpperCase()} color="hsl(220 70% 35%)" size={80} />
         {!editing ? (
           <>
             <h2 className="font-bold text-xl text-foreground mt-3">{fullName || "Utilisateur"}</h2>
@@ -584,18 +604,18 @@ const { error: updateError } = await supabase
           </div>
           <Switch checked={dark} onCheckedChange={toggleDark} />
         </div>
-       <SettingsRow 
-  icon={<Download className="w-4 h-4" />} 
-  label="Télécharger l'application" 
-  subtitle="Version 1.0 disponible (APK)"
-  onClick={() => {
-    const link = document.createElement('a');
-    link.href = "https://jafhpkbtxcmzufznnbxc.supabase.co/storage/v1/object/public/app-mirec./app-debug.apk";
-    link.download = "MIREC.apk";
-    link.target = "_blank";
-    link.click();
-  }} 
-/>
+        <SettingsRow 
+          icon={<Download className="w-4 h-4" />} 
+          label="Télécharger l'application" 
+          subtitle="Version 1.0 disponible (APK)"
+          onClick={() => {
+            const link = document.createElement('a');
+            link.href = "https://jafhpkbtxcmzufznnbxc.supabase.co/storage/v1/object/public/app-mirec./app-debug.apk";
+            link.download = "MIREC.apk";
+            link.target = "_blank";
+            link.click();
+          }} 
+        />
         <div className="border-b border-border/30" />
         <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-3.5 text-destructive hover:bg-destructive/5 transition-colors">
           <LogOut className="w-4 h-4" />
