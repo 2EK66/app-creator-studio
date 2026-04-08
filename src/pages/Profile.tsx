@@ -280,6 +280,7 @@ export default function Profile() {
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null); // NOUVEAU
   const [saving, setSaving] = useState(false);
   const [points, setPoints] = useState(0);
   const [posts, setPosts] = useState<any[]>([]);
@@ -292,10 +293,15 @@ export default function Profile() {
     if (!user) return;
     supabase.from("profiles").select("full_name, username, avatar_url, points_total").eq("id", user.id).single()
       .then(({ data }) => {
-        if (data) { setFullName(data.full_name || ""); setUsername(data.username || ""); setPoints(data.points_total || 0); }
+        if (data) {
+          setFullName(data.full_name || "");
+          setUsername(data.username || "");
+          setAvatarUrl(data.avatar_url || null); // NOUVEAU
+          setPoints(data.points_total || 0);
+        }
       });
   }, [user]);
-
+  
   useEffect(() => {
     if (!user) return;
     setLoadingPosts(true);
@@ -371,6 +377,14 @@ export default function Profile() {
 
   return (
     <div className="max-w-lg mx-auto pb-28 px-4 pt-6">
+      {/* HEADER */}
+      <div className="flex flex-col items-center mb-6">
+        <MirecAvatar
+          initials={(fullName || user.email || "U").slice(0, 2).toUpperCase()}
+          color="hsl(220 70% 35%)"
+          size={80}
+          url={avatarUrl}   // NOUVEAU : transmet l'URL de l'avatar
+        />
 
       {/* HEADER */}
       <div className="flex flex-col items-center mb-6">
