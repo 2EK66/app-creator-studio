@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { BottomTabs } from "@/components/mirec/BottomTabs";
 import Feed        from "@/pages/Feed";
 import Groups      from "@/pages/Groups";
@@ -7,25 +8,32 @@ import Louange     from "@/pages/Louange";
 import Marketplace from "@/pages/Marketplace";
 import Profile     from "@/pages/Profile";
 
-// ============================================================
-// État partagé pour ouvrir directement une conversation
-// depuis le Feed (fiche profil → "Envoyer un message")
-// ============================================================
-interface InboxState {
-  openConversationWith?: string;
-  userName?: string;
-  avatarUrl?: string | null;
-}
-
 export default function Index() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("feed");
-  const [inboxState, setInboxState] = useState<InboxState>({});
+  const [inboxState, setInboxState] = useState<{ openConversationWith?: string; userName?: string; avatarUrl?: string | null }>({});
 
-  // Appelé par Feed (et autres pages) pour changer d'onglet
-  // avec un état optionnel (ex: ouvrir une conversation)
+  // Détecter une navigation avec état (ex: depuis Feed)
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.tab) {
+      setActiveTab(state.tab);
+      if (state.tab === "inbox" && state.openConversationWith) {
+        setInboxState({
+          openConversationWith: state.openConversationWith,
+          userName: state.userName,
+          avatarUrl: state.avatarUrl,
+        });
+      }
+      // Nettoyer l'état de l'URL pour éviter de le réappliquer au re-render
+      navigate("/", { replace: true, state: {} });
+    }
+  }, [location.state, navigate]);
+
   const handleTabChange = (tab: string, state?: Record<string, any>) => {
     if (tab === "inbox" && state) {
-      setInboxState(state as InboxState);
+      setInboxState(state as any);
     } else {
       setInboxState({});
     }
@@ -34,12 +42,11 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* PAGE ACTIVE */}
       {activeTab === "feed"        && <Feed        onTabChange={handleTabChange} />}
       {activeTab === "groupes"     && <Groups />}
       {activeTab === "inbox"       && (
         <Messages
-          key={JSON.stringify(inboxState)} // force re-mount si état change
+          key={JSON.stringify(inboxState)}
           initialState={inboxState}
           onTabChange={handleTabChange}
         />
@@ -48,7 +55,6 @@ export default function Index() {
       {activeTab === "marketplace" && <Marketplace />}
       {activeTab === "profil"      && <Profile />}
 
-      {/* BARRE DE NAVIGATION */}
       <BottomTabs active={activeTab} onChange={handleTabChange} />
     </div>
   );
