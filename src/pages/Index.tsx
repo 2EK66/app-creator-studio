@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { BottomTabs } from "@/components/mirec/BottomTabs";
 import Feed        from "@/pages/Feed";
 import Groups      from "@/pages/Groups";
@@ -9,27 +8,12 @@ import Marketplace from "@/pages/Marketplace";
 import Profile     from "@/pages/Profile";
 
 export default function Index() {
-  const location = useLocation();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("feed");
-  const [inboxState, setInboxState] = useState<{ openConversationWith?: string; userName?: string; avatarUrl?: string | null }>({});
-
-  // Détecter une navigation avec état (ex: depuis Feed)
-  useEffect(() => {
-    const state = location.state as any;
-    if (state?.tab) {
-      setActiveTab(state.tab);
-      if (state.tab === "inbox" && state.openConversationWith) {
-        setInboxState({
-          openConversationWith: state.openConversationWith,
-          userName: state.userName,
-          avatarUrl: state.avatarUrl,
-        });
-      }
-      // Nettoyer l'état de l'URL pour éviter de le réappliquer au re-render
-      navigate("/", { replace: true, state: {} });
-    }
-  }, [location.state, navigate]);
+  const [inboxState, setInboxState] = useState<{
+    openConversationWith?: string;
+    userName?: string;
+    avatarUrl?: string | null;
+  }>({});
 
   const handleTabChange = (tab: string, state?: Record<string, any>) => {
     if (tab === "inbox" && state) {
@@ -46,7 +30,7 @@ export default function Index() {
       {activeTab === "groupes"     && <Groups />}
       {activeTab === "inbox"       && (
         <Messages
-          key={JSON.stringify(inboxState)}
+          key={JSON.stringify(inboxState)} // force re‑mount si l'état change
           initialState={inboxState}
           onTabChange={handleTabChange}
         />
