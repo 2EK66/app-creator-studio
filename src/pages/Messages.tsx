@@ -29,7 +29,6 @@ interface DirectMessage {
 }
 
 interface MessagesProps {
-  // État initial pour ouvrir directement une conversation
   initialState?: {
     openConversationWith?: string;
     userName?: string;
@@ -73,16 +72,17 @@ function PhotoModal({ avatarUrl, name, initials, onClose }: {
 // COMPOSANT PRINCIPAL
 // ============================================================
 export default function Messages({ initialState = {}, onTabChange }: MessagesProps) {
-  const { user }     = useAuth();
-  const navigate     = useNavigate();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hasOpenedRef = useRef(false); // Pour n'ouvrir qu'une seule fois
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading]             = useState(true);
+  const [loading, setLoading] = useState(true);
   const [activePartner, setActivePartner] = useState<{
     id: string; name: string; avatarUrl?: string | null;
   } | null>(null);
-  const [messages, setMessages]   = useState<DirectMessage[]>([]);
+  const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -96,32 +96,39 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
     return supabase.storage.from("avatars").getPublicUrl(path).data?.publicUrl || null;
   };
 
-  // ---- Ouvrir conversation ----
+  // ---- Ouvrir conversation (centrale) ----
   const openConversation = async (partnerId: string, partnerName: string, partnerAvatarUrl: string | null = null) => {
     if (!user) return;
-    setActivePartner({ id: partnerId, name: partnerName, avatarUrl: partnerAvatarUrl });
+    try {
+      setActivePartner({ id: partnerId, name: partnerName, avatarUrl: partnerAvatarUrl });
 
-    const { data } = await supabase
-      .from("direct_messages").select("*")
-      .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
-      .order("created_at", { ascending: true });
+      const { data, error } = await supabase
+        .from("direct_messages").select("*")
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+        .order("created_at", { ascending: true });
 
-    setMessages(data || []);
+      if (error) throw error;
+      setMessages(data || []);
 
-    // Marquer comme lu
-    await supabase.from("direct_messages").update({ is_read: true })
-      .eq("sender_id", partnerId).eq("receiver_id", user.id).eq("is_read", false);
+      // Marquer comme lu
+      await supabase.from("direct_messages").update({ is_read: true })
+        .eq("sender_id", partnerId).eq("receiver_id", user.id).eq("is_read", false);
+    } catch (err) {
+      console.error("Erreur ouverture conversation:", err);
+      alert("Impossible d'ouvrir la conversation. Réessaie plus tard.");
+      // En cas d'erreur, on revient à la liste
+      setActivePartner(null);
+    }
   };
 
-  // ---- Ouvrir depuis initialState (vient du Feed) ----
+  // ---- Ouverture automatique depuis initialState (Feed) ----
   useEffect(() => {
     if (!user) return;
-    if (initialState?.openConversationWith) {
-      const partnerId   = initialState.openConversationWith;
+    if (initialState?.openConversationWith && !hasOpenedRef.current) {
+      hasOpenedRef.current = true;
+      const partnerId = initialState.openConversationWith;
       const partnerName = initialState.userName || "Utilisateur";
-      const avatar      = initialState.avatarUrl
-        ? getAvatarUrl(initialState.avatarUrl)
-        : null;
+      const avatar = initialState.avatarUrl ? getAvatarUrl(initialState.avatarUrl) : null;
       openConversation(partnerId, partnerName, avatar);
     }
   }, [user, initialState?.openConversationWith]);
@@ -158,17 +165,17 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
     );
 
     const convos: Conversation[] = partnerIds.map(pid => {
-      const pMsgs  = partnerMap.get(pid)!;
-      const last   = pMsgs[0];
-      const prof   = profileMap[pid] || { name: "Anonyme", avatar: null };
+      const pMsgs = partnerMap.get(pid)!;
+      const last = pMsgs[0];
+      const prof = profileMap[pid] || { name: "Anonyme", avatar: null };
       return {
-        partner_id:         pid,
-        partner_name:       prof.name,
-        partner_initials:   prof.name.slice(0, 2).toUpperCase(),
+        partner_id: pid,
+        partner_name: prof.name,
+        partner_initials: prof.name.slice(0, 2).toUpperCase(),
         partner_avatar_url: prof.avatar,
-        last_message:       last.content,
-        last_time:          last.created_at || "",
-        unread:             pMsgs.filter(m => m.receiver_id === user.id && !m.is_read).length,
+        last_message: last.content,
+        last_time: last.created_at || "",
+        unread: pMsgs.filter(m => m.receiver_id === user.id && !m.is_read).length,
       };
     });
 
@@ -178,23 +185,28 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
 
   useEffect(() => { if (user) fetchConversations(); }, [user]);
 
+  // ---- Rafraîchir les conversations après l'envoi d'un message ----
+  const refreshConversations = () => {
+    fetchConversations();
+  };
+
   // ---- Envoyer DM ----
   const sendDM = async () => {
     if (!newMessage.trim() || !user || !activePartner) return;
     const msg = {
-      id:          crypto.randomUUID(),
-      content:     newMessage.trim(),
-      created_at:  new Date().toISOString(),
-      sender_id:   user.id,
+      id: crypto.randomUUID(),
+      content: newMessage.trim(),
+      created_at: new Date().toISOString(),
+      sender_id: user.id,
       receiver_id: activePartner.id,
-      is_read:     false,
+      is_read: false,
     };
     setMessages(prev => [...prev, msg]);
     setNewMessage("");
     await supabase.from("direct_messages").insert({
       sender_id: user.id, receiver_id: activePartner.id, content: msg.content,
     });
-    fetchConversations();
+    refreshConversations();
   };
 
   // ---- Recherche membres ----
@@ -214,9 +226,9 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
   };
 
   const formatTime = (iso: string) => {
-    const d    = new Date(iso);
+    const d = new Date(iso);
     const diff = Date.now() - d.getTime();
-    if (diff < 86400000)  return d.toLocaleTimeString("fr", { hour: "2-digit", minute: "2-digit" });
+    if (diff < 86400000) return d.toLocaleTimeString("fr", { hour: "2-digit", minute: "2-digit" });
     if (diff < 604800000) return d.toLocaleDateString("fr", { weekday: "short" });
     return d.toLocaleDateString("fr", { day: "numeric", month: "short" });
   };
