@@ -75,7 +75,6 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
   const { user } = useAuth();
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const hasOpenedRef = useRef(false);
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,17 +109,14 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
       .eq("sender_id", partnerId).eq("receiver_id", user.id).eq("is_read", false);
   };
 
-  // Ouverture automatique depuis le feed
+  // Ouverture automatique depuis le feed (sans ref, surveille tout initialState)
   useEffect(() => {
-    if (!user) return;
-    if (initialState?.openConversationWith && !hasOpenedRef.current) {
-      hasOpenedRef.current = true;
-      const partnerId = initialState.openConversationWith;
-      const partnerName = initialState.userName || "Utilisateur";
-      const avatar = initialState.avatarUrl ? getAvatarUrl(initialState.avatarUrl) : null;
-      openConversation(partnerId, partnerName, avatar);
-    }
-  }, [user, initialState?.openConversationWith]);
+    if (!user || !initialState?.openConversationWith) return;
+    const partnerId = initialState.openConversationWith;
+    const partnerName = initialState.userName || "Utilisateur";
+    const avatar = initialState.avatarUrl ? getAvatarUrl(initialState.avatarUrl) : null;
+    openConversation(partnerId, partnerName, avatar);
+  }, [user, initialState]); // ← dépendance sur tout initialState
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
