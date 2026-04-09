@@ -105,7 +105,6 @@ function PhotoModal({
   initials: string;
   onClose: () => void;
 }) {
-  // Fermer avec Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
@@ -117,18 +116,13 @@ function PhotoModal({
       className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center"
       onClick={onClose}
     >
-      {/* Bouton fermer */}
       <button
         onClick={onClose}
         className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
       >
         <X className="w-5 h-5 text-white" />
       </button>
-
-      {/* Nom en haut */}
       <p className="text-white font-semibold text-base mb-4 opacity-90">{name}</p>
-
-      {/* Photo ou initiales en grand */}
       <div
         className="rounded-full overflow-hidden border-4 border-white/20 shadow-2xl"
         style={{ width: 240, height: 240 }}
@@ -149,7 +143,6 @@ function PhotoModal({
           </div>
         )}
       </div>
-
       <p className="text-white/40 text-xs mt-6">Appuie n'importe où pour fermer</p>
     </div>
   );
@@ -180,18 +173,15 @@ function UserProfileModal({
   }, [onClose]);
 
   useEffect(() => {
-    // Charger le profil
     supabase.from("profiles")
       .select("full_name, username, points_total, streak_days, role, quartier, created_at")
       .eq("id", userId)
       .single()
       .then(({ data }) => { if (data) setProfile(data); });
 
-    // Nombre de posts
     supabase.from("posts").select("id", { count: "exact", head: true }).eq("author_id", userId)
       .then(({ count }) => { if (count !== null) setPostCount(count); });
 
-    // Compétences
     (supabase.from("member_skills" as any).select("skill, level").eq("profile_id", userId).limit(5) as any)
       .then(({ data }: any) => { if (data) setSkills(data); });
   }, [userId]);
@@ -223,12 +213,10 @@ function UserProfileModal({
         style={{ maxHeight: "85vh", overflowY: "auto" }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Barre handle */}
         <div className="flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 rounded-full bg-border" />
         </div>
 
-        {/* Header avec avatar + infos */}
         <div className="flex items-center gap-4 px-5 py-4 border-b border-border/30">
           <button onClick={onViewPhoto} className="flex-shrink-0 rounded-full overflow-hidden border-3 border-primary/20 hover:border-primary/60 hover:scale-105 transition-all"
             style={{ width: 64, height: 64 }}>
@@ -256,7 +244,6 @@ function UserProfileModal({
           </button>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-3 px-5 py-4 border-b border-border/30">
           <div className="text-center">
             <p className="font-bold text-lg text-foreground">{postCount}</p>
@@ -272,7 +259,6 @@ function UserProfileModal({
           </div>
         </div>
 
-        {/* Niveau spirituel */}
         <div className="px-5 py-3 border-b border-border/30">
           <div className="flex items-center gap-2">
             <span className="text-xl">{level.icon}</span>
@@ -283,14 +269,12 @@ function UserProfileModal({
           </div>
         </div>
 
-        {/* Quartier */}
         {profile?.quartier && (
           <div className="px-5 py-3 border-b border-border/30">
             <p className="text-xs text-muted-foreground">📍 {profile.quartier}</p>
           </div>
         )}
 
-        {/* Compétences */}
         {skills.length > 0 && (
           <div className="px-5 py-3 border-b border-border/30">
             <p className="text-xs font-semibold text-muted-foreground mb-2">💼 Compétences</p>
@@ -309,10 +293,13 @@ function UserProfileModal({
           </div>
         )}
 
-        {/* Bouton message */}
         <div className="px-5 py-4">
           <button
-            onClick={() => { navigate("/messages"); onClose(); }}
+            onClick={() => {
+              // Naviguer vers la messagerie avec l'ID de l'utilisateur cible
+              navigate("/messages", { state: { openConversationWith: userId, userName: name } });
+              onClose();
+            }}
             className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
           >
             💬 Envoyer un message
@@ -354,7 +341,6 @@ export default function Feed() {
     { key: "verse",        label: "📖 Versets"     },
   ];
 
-  // ---- Charger les posts ----
   const fetchPosts = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
 
@@ -421,7 +407,6 @@ export default function Feed() {
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
-  // ---- Réactions ----
   const handleReact = async (postId: string, key: "amen" | "feu" | "coeur") => {
     if (!user) { navigate("/auth"); return; }
     const post = posts.find(p => p.id === postId);
@@ -439,7 +424,6 @@ export default function Feed() {
     }
   };
 
-  // ---- Nouveau post ----
   const handleNewPost = async (data: { content: string; type: string }) => {
     if (!user) { navigate("/auth"); return; }
     const { error } = await supabase.from("posts").insert({
@@ -449,7 +433,6 @@ export default function Feed() {
     fetchPosts();
   };
 
-  // ---- Supprimer ----
   const handleDeletePost = async (postId: string) => {
     setPosts(prev => prev.filter(p => p.id !== postId));
     setMenuOpen(null);
@@ -465,12 +448,10 @@ export default function Feed() {
     await supabase.from("posts").update({ content: editContent.trim() }).eq("id", postId);
   };
 
-  // ---- Ouvrir photo ----
   const openPhoto = (post: FeedPost) => {
     setPhotoModal({ url: post.author_avatar, name: post.author_name, initials: post.author_initials });
   };
 
-  // ---- Ouvrir profil ----
   const openProfile = (post: FeedPost) => {
     setProfileModal({ userId: post.author_id, name: post.author_name, initials: post.author_initials, avatar: post.author_avatar });
   };
@@ -480,7 +461,6 @@ export default function Feed() {
   return (
     <div className="min-h-screen bg-background pb-20">
 
-      {/* HEADER */}
       <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-lg border-b border-border/50 px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -499,7 +479,6 @@ export default function Feed() {
         </div>
       </header>
 
-      {/* FILTRES */}
       <div className="sticky top-[61px] z-20 bg-background/80 backdrop-blur-md px-4 py-2.5 border-b border-border/30">
         <div className="max-w-lg mx-auto flex gap-2 overflow-x-auto no-scrollbar">
           {filters.map(f => (
@@ -513,7 +492,6 @@ export default function Feed() {
         </div>
       </div>
 
-      {/* LISTE POSTS */}
       <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
         {loading ? (
           <div className="flex justify-center py-12">
@@ -531,10 +509,7 @@ export default function Feed() {
           return (
             <div key={post.id} className="bg-card border border-border/50 rounded-2xl p-4 shadow-sm">
 
-              {/* Header post */}
               <div className="flex items-center gap-3 mb-3">
-
-                {/* AVATAR — clic → affiche photo en grand */}
                 <PostAvatar
                   avatarUrl={post.author_avatar}
                   initials={post.author_initials}
@@ -543,7 +518,6 @@ export default function Feed() {
                 />
 
                 <div className="flex-1 min-w-0">
-                  {/* NOM — clic → ouvre fiche profil */}
                   <button
                     onClick={() => openProfile(post)}
                     className="text-sm font-semibold text-foreground hover:text-primary hover:underline underline-offset-2 transition-colors text-left"
@@ -557,7 +531,6 @@ export default function Feed() {
                   {tc.label}
                 </span>
 
-                {/* Menu auteur */}
                 {isAuthor && (
                   <div className="relative">
                     <button onClick={() => setMenuOpen(menuOpen === post.id ? null : post.id)}
@@ -583,7 +556,6 @@ export default function Feed() {
                 )}
               </div>
 
-              {/* Contenu */}
               {isEditing ? (
                 <div className="mb-4 space-y-2">
                   <textarea value={editContent} onChange={e => setEditContent(e.target.value)}
@@ -604,7 +576,6 @@ export default function Feed() {
                 <p className="text-sm text-foreground leading-relaxed mb-4">{post.content}</p>
               )}
 
-              {/* Réactions */}
               <div className="flex gap-2 pt-3 border-t border-border/30">
                 {([
                   { key: "amen"  as const, emoji: "🙏", label: "Amen" },
@@ -634,16 +605,13 @@ export default function Feed() {
         })}
       </div>
 
-      {/* FAB */}
       <button onClick={() => { if (!user) { navigate("/auth"); return; } setShowNew(true); }}
         className="fixed bottom-20 right-4 sm:right-[calc(50%-224px)] w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-xl flex items-center justify-center hover:scale-105 transition-transform z-30">
         <Plus className="w-6 h-6" />
       </button>
 
-      {/* MODAL NOUVEAU POST */}
       {showNew && <NewPostModal onClose={() => setShowNew(false)} onSubmit={handleNewPost} />}
 
-      {/* MODAL PHOTO EN GRAND */}
       {photoModal && (
         <PhotoModal
           avatarUrl={photoModal.url}
@@ -653,7 +621,6 @@ export default function Feed() {
         />
       )}
 
-      {/* MODAL PROFIL UTILISATEUR */}
       {profileModal && (
         <UserProfileModal
           userId={profileModal.userId}
