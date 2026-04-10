@@ -6,7 +6,7 @@ import { MirecAvatar } from "@/components/mirec/Avatar";
 import {
   Moon, Sun, Download, LogOut, ChevronRight,
   Edit3, Check, X, FileText, Award, BarChart2,
-  Briefcase, Plus, Trash2, Star
+  Briefcase, Plus, Trash2, Star, Camera
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
@@ -290,7 +290,8 @@ export default function Profile() {
   const [loadingPosts, setLoadingPosts] = useState(true);
   
   // États pour l'upload d'avatar
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading]         = useState(false);
+  const [viewingAvatar, setViewingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -407,25 +408,74 @@ export default function Profile() {
 
   return (
     <div className="max-w-lg mx-auto pb-28 px-4 pt-6">
-      {/* HEADER avec avatar cliquable */}
+      {/* HEADER avec avatar */}
       <div className="flex flex-col items-center mb-6">
-        <div 
-          onClick={() => fileInputRef.current?.click()} 
-          className="cursor-pointer relative group"
-        >
-          <MirecAvatar
-            initials={(fullName || user.email || "U").slice(0, 2).toUpperCase()}
-            color="hsl(220 70% 35%)"
-            size={80}
-            url={avatarUrl}
-          />
-          {uploading && (
-            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        {/* Visionneuse plein écran pour son propre avatar */}
+        {viewingAvatar && (
+          <div
+            className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center"
+            onClick={() => setViewingAvatar(false)}
+          >
+            <button
+              onClick={() => setViewingAvatar(false)}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
+            <p className="text-white font-semibold text-base mb-4 opacity-90">{fullName || "Profil"}</p>
+            <div
+              className="rounded-full overflow-hidden border-4 border-white/20 shadow-2xl"
+              style={{ width: 240, height: 240 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {avatarUrl
+                ? <img src={avatarUrl} alt="Profil" className="w-full h-full object-cover" />
+                : <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: "hsl(220 70% 35%)" }}>
+                    <span className="text-white font-bold" style={{ fontSize: 72 }}>
+                      {(fullName || user.email || "U").slice(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+              }
             </div>
-          )}
+            <button
+              onClick={(e) => { e.stopPropagation(); setViewingAvatar(false); fileInputRef.current?.click(); }}
+              className="mt-6 flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-colors"
+            >
+              <Camera className="w-4 h-4" /> Changer la photo
+            </button>
+            <p className="text-white/40 text-xs mt-4">Appuie n'importe où pour fermer</p>
+          </div>
+        )}
+
+        <div className="relative">
+          {/* Clic sur avatar = voir en grand */}
+          <button
+            onClick={() => setViewingAvatar(true)}
+            className="rounded-full focus:outline-none"
+          >
+            <MirecAvatar
+              initials={(fullName || user.email || "U").slice(0, 2).toUpperCase()}
+              color="hsl(220 70% 35%)"
+              size={80}
+              url={avatarUrl}
+            />
+            {uploading && (
+              <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </button>
+
+          {/* Bouton caméra pour changer la photo */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md border-2 border-card hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            <Camera className="w-3.5 h-3.5" />
+          </button>
         </div>
-        
+
         <input
           ref={fileInputRef}
           type="file"

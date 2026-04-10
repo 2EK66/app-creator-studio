@@ -19,6 +19,7 @@ interface FeedPost {
   author_name: string;
   author_initials: string;
   author_avatar: string | null;
+  image_url: string | null;
   reactions: { amen: number; feu: number; coeur: number };
   user_reactions: Record<string, boolean>;
   comments_count: number;
@@ -332,10 +333,18 @@ export default function Feed({ onTabChange }: FeedProps) {
   const fetchPosts = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
 
-    const { data: postsData, error } = await supabase
-      .from("posts").select("id, content, type, created_at, author_id")
+    // Try fetching with image_url (requires migration), fall back without
+    let result = await supabase
+      .from("posts").select("id, content, type, created_at, author_id, image_url")
       .order("created_at", { ascending: false }).limit(50);
 
+    if (result.error) {
+      result = await supabase
+        .from("posts").select("id, content, type, created_at, author_id")
+        .order("created_at", { ascending: false }).limit(50);
+    }
+
+    const { data: postsData, error } = result;
     if (error || !postsData) { setLoading(false); setRefreshing(false); return; }
 
     const authorIds = [...new Set(postsData.map(p => p.author_id).filter(Boolean))];
@@ -378,6 +387,7 @@ export default function Feed({ onTabChange }: FeedProps) {
         author_name: name,
         author_initials: name.slice(0, 2).toUpperCase(),
         author_avatar: p?.avatar || null,
+        image_url: (post as any).image_url || null,
         reactions, user_reactions,
         comments_count: commentCounts[post.id] || 0,
       };
@@ -406,9 +416,11 @@ export default function Feed({ onTabChange }: FeedProps) {
     }
   };
 
-  const handleNewPost = async (data: { content: string; type: string }) => {
+  const handleNewPost = async (data: { content: string; type: string; imageUrl?: string }) => {
     if (!user) { navigate("/auth"); return; }
-    const { error } = await supabase.from("posts").insert({ content: data.content, type: data.type, author_id: user.id });
+    const payload: Record<string, string> = { content: data.content, type: data.type, author_id: user.id };
+    if (data.imageUrl) payload.image_url = data.imageUrl;
+    const { error } = await supabase.from("posts").insert(payload);
     if (!error) fetchPosts();
   };
 
@@ -549,7 +561,21 @@ export default function Feed({ onTabChange }: FeedProps) {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-foreground leading-relaxed mb-4">{post.content}</p>
+                <div className="mb-4 space-y-3">
+                  {post.content && (
+                    <p className="text-sm text-foreground leading-relaxed">{post.content}</p>
+                  )}
+                  {post.image_url && (
+                    <div className="rounded-xl overflow-hidden border border-border/50">
+                      <img
+                        src={post.image_url}
+                        alt="Post"
+                        className="w-full max-h-80 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                        onClick={() => setPhotoModal({ url: post.image_url, name: post.author_name, initials: post.author_initials })}
+                      />
+                    </div>
+                  )}
+                </div>
               )}
 
               <div className="flex gap-2 pt-3 border-t border-border/30">
