@@ -1,5 +1,5 @@
-import Placeholder from "@/pages/Placeholder";
+import LouangeComponent from "@/components/mirec/Louange";
 
 export default function Louange() {
-  return <Placeholder title="Louange" />;
+  return <LouangeComponent />;
 }
