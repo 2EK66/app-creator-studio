@@ -574,161 +574,194 @@ export default function Feed({ onTabChange }: FeedProps) {
       </header>
 
       {/* ============================================================ */}
-      {/* TEMOIGNAGES FLASH SECTION - Design lumineux avec bulles */}
+      {/* TEMOIGNAGES FLASH SECTION - Design exact de l'image */}
       {/* ============================================================ */}
       <style>{`
-        @keyframes float {
-          0%, 100% { transform: translate(-50%, -50%) translateY(0px); }
-          50% { transform: translate(-50%, -50%) translateY(-10px); }
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.2; }
+          50% { opacity: 1; }
         }
         @keyframes pulse-glow {
-          0%, 100% { opacity: 0.4; transform: scale(1); }
-          50% { opacity: 0.7; transform: scale(1.05); }
+          0%, 100% { box-shadow: 0 0 20px rgba(147,112,219,0.4), 0 0 40px rgba(138,43,226,0.2); }
+          50% { box-shadow: 0 0 30px rgba(147,112,219,0.6), 0 0 60px rgba(138,43,226,0.3); }
         }
-        @keyframes twinkle {
-          0%, 100% { opacity: 0.3; }
-          50% { opacity: 1; }
+        @keyframes wave {
+          0%, 100% { height: 4px; }
+          50% { height: 12px; }
         }
       `}</style>
       
-      <div className="relative h-[340px] overflow-hidden" style={{
-        background: "linear-gradient(180deg, #0a0a1a 0%, #1a1035 50%, #0f0a20 100%)",
+      <div className="relative overflow-hidden" style={{
+        background: "linear-gradient(180deg, #0c0c1d 0%, #1a1040 30%, #150d30 70%, #0c0c1d 100%)",
+        minHeight: "320px",
       }}>
-        {/* ETOILES SCINTILLANTES */}
-        {Array.from({ length: 50 }, (_, i) => (
+        {/* Stars */}
+        {Array.from({ length: 60 }, (_, i) => (
           <div key={i} className="absolute rounded-full pointer-events-none"
             style={{
-              width: Math.random() * 2 + 1,
-              height: Math.random() * 2 + 1,
+              width: Math.random() > 0.7 ? 2 : 1,
+              height: Math.random() > 0.7 ? 2 : 1,
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
               background: "#fff",
-              animation: `twinkle ${2 + Math.random() * 3}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 3}s`,
+              opacity: 0.3 + Math.random() * 0.5,
+              animation: `twinkle ${2 + Math.random() * 4}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 5}s`,
             }}
           />
         ))}
         
         {/* Title */}
-        <h2 className="text-center text-white font-semibold text-lg pt-4 mb-2 drop-shadow-lg">
+        <h2 className="text-center text-white font-semibold text-base pt-4 mb-3" style={{ textShadow: "0 2px 10px rgba(0,0,0,0.5)" }}>
           Temoignages Flash
         </h2>
         
-        {/* BULLES CIRCULAIRES LUMINEUSES - Positionnees organiquement */}
-        <div className="relative h-[260px] flex items-center justify-center">
-          <div className="relative w-full h-full max-w-md mx-auto">
-          {flashTestimonies.map((testimony, i) => {
-            const positions = [
-              { x: 12, y: 50, size: 90 },
-              { x: 38, y: 30, size: 100 },
-              { x: 62, y: 55, size: 95 },
-              { x: 88, y: 35, size: 85 },
-            ];
-            const pos = positions[i] || positions[0];
-            
-            return (
-              <div
-                key={testimony.id}
-                className="absolute flex flex-col items-center cursor-pointer z-10"
-                style={{
-                  left: `${pos.x}%`,
-                  top: `${pos.y}%`,
-                  transform: "translate(-50%, -50%)",
-                }}
-              >
-                {/* Glow effect behind bubble */}
-                <div
-                  className="absolute rounded-full blur-xl"
-                  style={{
-                    width: pos.size + 40,
-                    height: pos.size + 40,
-                    background: "radial-gradient(circle, rgba(147,112,219,0.6) 0%, rgba(138,43,226,0.3) 50%, transparent 70%)",
-                  }}
-                />
-
-                {/* Main bubble with glow border */}
-                <div
-                  className="relative rounded-full overflow-hidden flex flex-col items-center justify-center hover:scale-105 transition-transform"
-                  style={{
-                    width: pos.size,
-                    height: pos.size,
-                    background: "linear-gradient(145deg, rgba(30,20,60,0.95) 0%, rgba(50,30,90,0.9) 100%)",
-                    border: "2px solid rgba(180,100,255,0.6)",
-                    boxShadow: "0 0 25px rgba(147,112,219,0.5), 0 0 50px rgba(138,43,226,0.3), inset 0 0 20px rgba(147,112,219,0.2)",
-                  }}
-                >
-                  {/* Avatar circle */}
-                  <div
-                    className="rounded-full flex items-center justify-center mb-1"
-                    style={{ 
-                      width: pos.size * 0.38, 
-                      height: pos.size * 0.38, 
-                      background: "linear-gradient(135deg, #9333ea, #3b82f6)",
-                      border: "2px solid rgba(255,255,255,0.3)"
-                    }}
-                  >
-                    <span className="text-white font-bold" style={{ fontSize: pos.size * 0.12 }}>{testimony.initials}</span>
-                  </div>
-                  
-                  {/* Name */}
-                  <p className="text-[10px] font-semibold text-white text-center px-2 truncate w-full">
-                    {testimony.name}
-                  </p>
-                  <p className="text-[8px] text-purple-300/80">{testimony.time}</p>
-                  
-                  {/* Content preview inside bubble */}
-                  {testimony.isVocal ? (
-                    <p className="text-[8px] text-purple-200 mt-1">Temoignage vocal</p>
-                  ) : (
-                    <p className="text-[8px] text-purple-200/90 text-center line-clamp-2 px-2 mt-1 italic leading-tight">
-                      {testimony.content.slice(0, 25)}...
-                    </p>
-                  )}
-                </div>
-
-                {/* Amen button */}
-                <button
-                  className="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-semibold shadow-lg hover:scale-110 transition-transform"
-                  style={{
-                    background: "linear-gradient(135deg, #10b981, #14b8a6)",
-                    color: "#fff",
-                    boxShadow: "0 0 15px rgba(16,185,129,0.5)",
-                  }}
-                >
-                  Amen
-                </button>
-              </div>
-            );
-          })}
+        {/* Bubbles Container */}
+        <div className="relative h-[250px] max-w-lg mx-auto px-2">
           
-          {/* Central decorative message */}
-          <div className="absolute left-1/2 bottom-2 transform -translate-x-1/2 text-center pointer-events-none z-20">
-            <p className="text-purple-300/60 text-xs italic">Merci Seigneur pour cette journee benie !</p>
-            <button className="mt-1 flex items-center gap-1 px-3 py-1 mx-auto rounded-full text-white text-xs font-medium shadow-lg hover:scale-105 transition-transform pointer-events-auto"
-              style={{ background: "linear-gradient(135deg, #059669, #14b8a6)" }}>
-              Amen
+          {/* Bubble 1 - Agathe (left) */}
+          <div className="absolute flex flex-col items-center" style={{ left: "5%", top: "15%" }}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: "linear-gradient(135deg, #7c3aed, #3b82f6)" }}>AG</div>
+              <div>
+                <p className="text-white text-[11px] font-semibold leading-tight">Agathe</p>
+                <p className="text-purple-300/70 text-[8px]">il y a 3h</p>
+              </div>
+            </div>
+            <div className="relative rounded-full p-3 flex flex-col items-center justify-center text-center" style={{
+              width: 95, height: 95,
+              background: "radial-gradient(ellipse at center, rgba(60,30,100,0.9) 0%, rgba(30,15,60,0.95) 100%)",
+              border: "2px solid rgba(180,120,255,0.5)",
+              animation: "pulse-glow 3s ease-in-out infinite",
+            }}>
+              <p className="text-white/90 text-[9px] italic leading-tight px-1">Alors la paix de Dieu qui surpasse tout...</p>
+              <p className="text-amber-400/80 text-[8px] mt-1">Philippiens 4:6-7</p>
+            </div>
+            <button className="mt-2 flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-semibold text-white" style={{ background: "linear-gradient(135deg, #10b981, #0d9488)", boxShadow: "0 0 12px rgba(16,185,129,0.4)" }}>
+              <span className="text-[10px]">🙏</span> Amen
             </button>
           </div>
+          
+          {/* Bubble 2 - Jean Marie (center-left) */}
+          <div className="absolute flex flex-col items-center" style={{ left: "28%", top: "5%" }}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <div className="w-7 h-7 rounded-full overflow-hidden border border-purple-400/50">
+                <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: "linear-gradient(135deg, #7c3aed, #3b82f6)" }}>JM</div>
+              </div>
+              <div>
+                <p className="text-white text-[11px] font-semibold leading-tight">Jean Marie</p>
+                <p className="text-purple-300/70 text-[8px]">il y a 1h</p>
+              </div>
+            </div>
+            <div className="relative rounded-full p-3 flex flex-col items-center justify-center" style={{
+              width: 105, height: 105,
+              background: "radial-gradient(ellipse at center, rgba(60,30,100,0.9) 0%, rgba(30,15,60,0.95) 100%)",
+              border: "2px solid rgba(180,120,255,0.5)",
+              animation: "pulse-glow 3s ease-in-out infinite",
+              animationDelay: "0.5s",
+            }}>
+              {/* Audio waveform */}
+              <div className="flex items-center gap-[2px] mb-1">
+                {[...Array(12)].map((_, i) => (
+                  <div key={i} className="w-[2px] bg-white/80 rounded-full" style={{
+                    height: `${6 + Math.sin(i * 0.8) * 6}px`,
+                    animation: `wave ${0.5 + Math.random() * 0.5}s ease-in-out infinite`,
+                    animationDelay: `${i * 0.05}s`,
+                  }} />
+                ))}
+              </div>
+              <p className="text-purple-200/90 text-[9px] mt-1">Temoignage vocal</p>
+            </div>
+            <button className="mt-2 flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-semibold text-white" style={{ background: "linear-gradient(135deg, #10b981, #0d9488)", boxShadow: "0 0 12px rgba(16,185,129,0.4)" }}>
+              <span className="text-[10px]">🙏</span> Amen
+            </button>
           </div>
+          
+          {/* Central Image - Silhouette praying */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-0">
+            <div className="w-24 h-32 rounded-xl overflow-hidden opacity-70" style={{ background: "linear-gradient(180deg, #ff6b35 0%, #1a1040 60%)" }}>
+              <div className="w-full h-full flex items-end justify-center pb-2">
+                <svg width="50" height="70" viewBox="0 0 50 70" fill="none">
+                  <path d="M25 10C28 10 30 8 30 5C30 2 28 0 25 0C22 0 20 2 20 5C20 8 22 10 25 10ZM15 70V45H10V30C10 25 15 20 20 20H30C35 20 40 25 40 30V45H35V70H30V50H20V70H15Z" fill="rgba(0,0,0,0.6)"/>
+                </svg>
+              </div>
+            </div>
+            <p className="text-purple-200/60 text-[10px] italic mt-2 text-center">Merci Seigneur pour<br/>cette journee benie !</p>
+            <button className="mt-1.5 flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-semibold text-white" style={{ background: "linear-gradient(135deg, #10b981, #0d9488)", boxShadow: "0 0 12px rgba(16,185,129,0.4)" }}>
+              <span className="text-[10px]">🙏</span> Amen
+            </button>
+          </div>
+          
+          {/* Bubble 3 - Justine (center-right) */}
+          <div className="absolute flex flex-col items-center" style={{ right: "22%", top: "10%" }}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <div className="w-7 h-7 rounded-full overflow-hidden border border-purple-400/50">
+                <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: "linear-gradient(135deg, #ec4899, #8b5cf6)" }}>JU</div>
+              </div>
+              <div>
+                <p className="text-white text-[11px] font-semibold leading-tight">Justine</p>
+                <p className="text-purple-300/70 text-[8px]">il y a 3h</p>
+              </div>
+            </div>
+            <div className="relative rounded-full p-3 flex flex-col items-center justify-center text-center" style={{
+              width: 100, height: 100,
+              background: "radial-gradient(ellipse at center, rgba(60,30,100,0.9) 0%, rgba(30,15,60,0.95) 100%)",
+              border: "2px solid rgba(180,120,255,0.5)",
+              animation: "pulse-glow 3s ease-in-out infinite",
+              animationDelay: "1s",
+            }}>
+              <p className="text-white/90 text-[9px] italic leading-tight px-1">Je rends grace a Dieu, il a gueri ma fille</p>
+              <span className="text-[10px] mt-1">🙌</span>
+            </div>
+            <button className="mt-2 flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-semibold text-white" style={{ background: "linear-gradient(135deg, #10b981, #0d9488)", boxShadow: "0 0 12px rgba(16,185,129,0.4)" }}>
+              <span className="text-[10px]">🙏</span> Amen
+            </button>
+          </div>
+          
+          {/* Bubble 4 - Maxime (right) */}
+          <div className="absolute flex flex-col items-center" style={{ right: "2%", top: "5%" }}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: "linear-gradient(135deg, #3b82f6, #6366f1)" }}>M</div>
+              <div>
+                <p className="text-white text-[11px] font-semibold leading-tight">Maxime</p>
+                <p className="text-purple-300/70 text-[8px]">il y a 3h</p>
+              </div>
+            </div>
+            <div className="relative rounded-full p-3 flex flex-col items-center justify-center text-center" style={{
+              width: 85, height: 85,
+              background: "radial-gradient(ellipse at center, rgba(60,30,100,0.9) 0%, rgba(30,15,60,0.95) 100%)",
+              border: "2px solid rgba(180,120,255,0.5)",
+              animation: "pulse-glow 3s ease-in-out infinite",
+              animationDelay: "1.5s",
+            }}>
+              <p className="text-white/90 text-[9px] italic leading-tight px-1">Dieu est fidele! Il m&apos;a exauce!</p>
+            </div>
+            <button className="mt-2 flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-semibold text-white" style={{ background: "linear-gradient(135deg, #10b981, #0d9488)", boxShadow: "0 0 12px rgba(16,185,129,0.4)" }}>
+              <span className="text-[10px]">🙏</span> Amen
+            </button>
+          </div>
+          
         </div>
       </div>
 
       {/* ============================================================ */}
       {/* FILTERS */}
       {/* ============================================================ */}
-      <div className="sticky top-[61px] z-20 bg-background/80 backdrop-blur-md px-4 py-2.5 border-b border-border/30">
-        <div className="max-w-lg mx-auto flex gap-2 overflow-x-auto no-scrollbar">
+      <div className="sticky top-[61px] z-20 px-4 py-3" style={{ background: "linear-gradient(180deg, #0c0c1d 0%, #1a1040 100%)" }}>
+        <div className="max-w-lg mx-auto flex gap-2 overflow-x-auto no-scrollbar justify-center">
           {filters.map(f => (
             <button key={f.key} onClick={() => setFilter(f.key)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-                filter === f.key ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
+              className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                filter === f.key 
+                  ? "bg-purple-600/30 text-white border border-purple-400/50" 
+                  : "bg-purple-900/30 text-purple-200/70 border border-purple-500/20 hover:bg-purple-800/30"}`}>
               {f.label}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
+      <div className="max-w-lg mx-auto px-4 py-4 space-y-4" style={{ background: "linear-gradient(180deg, #0c0c1d 0%, #1a1040 100%)", minHeight: "100vh" }}>
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -741,10 +774,14 @@ export default function Feed({ onTabChange }: FeedProps) {
           const isEditing = editingPost === post.id;
 
           return (
-            <div key={post.id} className="bg-card border border-border/50 rounded-2xl p-4 shadow-sm">
+            <div key={post.id} className="rounded-2xl p-4 shadow-lg" style={{
+              background: "linear-gradient(145deg, #1a1030 0%, #0f0a20 100%)",
+              border: "1px solid rgba(147,112,219,0.3)",
+              boxShadow: "0 0 20px rgba(147,112,219,0.15), inset 0 1px 0 rgba(255,255,255,0.05)",
+            }}>
               <div className="flex items-center gap-3 mb-3">
 
-                {/* AVATAR → photo en grand (lecture seule) */}
+                {/* AVATAR */}
                 <PostAvatar
                   avatarUrl={post.author_avatar}
                   initials={post.author_initials}
@@ -757,7 +794,7 @@ export default function Feed({ onTabChange }: FeedProps) {
                 />
 
                 <div className="flex-1 min-w-0">
-                  {/* NOM → fiche profil */}
+                  {/* NOM */}
                   <button
                     onClick={() => setProfileModal({
                       userId:   post.author_id,
@@ -765,13 +802,13 @@ export default function Feed({ onTabChange }: FeedProps) {
                       initials: post.author_initials,
                       avatar:   post.author_avatar,
                     })}
-                    className="text-sm font-semibold text-foreground hover:text-primary hover:underline underline-offset-2 transition-colors text-left block truncate max-w-full">
+                    className="text-sm font-semibold text-white hover:text-purple-300 transition-colors text-left block truncate max-w-full">
                     {post.author_name}
                   </button>
-                  <p className="text-[11px] text-muted-foreground">{timeAgo(post.created_at || "")}</p>
+                  <p className="text-[11px] text-purple-300/60">{timeAgo(post.created_at || "")}</p>
                 </div>
 
-                <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0 ${tc.textClass} ${tc.bgClass}`}>
+                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-purple-200 bg-purple-500/20">
                   {tc.label}
                 </span>
 
@@ -818,10 +855,17 @@ export default function Feed({ onTabChange }: FeedProps) {
               ) : (
                 <div className="mb-4 space-y-3">
                   {post.content && (
-                    <p className="text-sm text-foreground leading-relaxed">{post.content}</p>
+                    <div className="rounded-xl p-4" style={{
+                      background: "linear-gradient(180deg, rgba(30,20,50,0.8) 0%, rgba(20,15,40,0.9) 100%)",
+                      border: "1px solid rgba(147,112,219,0.2)",
+                    }}>
+                      <p className="text-sm text-purple-100/90 leading-relaxed italic text-center" style={{ fontFamily: "Georgia, serif" }}>
+                        {post.content}
+                      </p>
+                    </div>
                   )}
                   {post.image_url && (
-                    <div className="rounded-xl overflow-hidden border border-border/50">
+                    <div className="rounded-xl overflow-hidden border border-purple-500/30">
                       <img
                         src={post.image_url}
                         alt="Post"
@@ -833,21 +877,33 @@ export default function Feed({ onTabChange }: FeedProps) {
                 </div>
               )}
 
-              <div className="flex gap-2 pt-3 border-t border-border/30">
-                {([
-                  { key: "amen"  as const, emoji: "🙏" },
-                  { key: "feu"   as const, emoji: "🔥" },
-                  { key: "coeur" as const, emoji: "❤️" },
-                ]).map(r => (
-                  <button key={r.key} onClick={() => handleReact(post.id, r.key)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                      post.user_reactions[r.key]
-                        ? "bg-primary/10 text-primary border border-primary/20"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
-                    <span>{r.emoji}</span>
-                    <span>{post.reactions[r.key]}</span>
+              <div className="flex items-center gap-2 pt-3 border-t border-purple-500/20">
+                {/* Amen button - prominent */}
+                <button onClick={() => handleReact(post.id, "amen")}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+                    post.user_reactions.amen
+                      ? "text-white"
+                      : "text-white hover:opacity-90"}`}
+                  style={{
+                    background: post.user_reactions.amen 
+                      ? "linear-gradient(135deg, #059669, #10b981)" 
+                      : "linear-gradient(135deg, #10b981, #14b8a6)",
+                    boxShadow: "0 0 12px rgba(16,185,129,0.3)",
+                  }}>
+                  <span>🙏</span> Amen
+                </button>
+                
+                {/* Other reactions */}
+                <div className="flex items-center gap-3 ml-auto">
+                  <button onClick={() => handleReact(post.id, "coeur")}
+                    className={`flex items-center gap-1 text-xs ${post.user_reactions.coeur ? "text-pink-400" : "text-purple-300/60 hover:text-pink-400"} transition-colors`}>
+                    <span>💬</span> <span>{post.comments_count}</span>
                   </button>
-                ))}
+                  <button onClick={() => handleReact(post.id, "coeur")}
+                    className={`flex items-center gap-1 text-xs ${post.user_reactions.coeur ? "text-pink-400" : "text-purple-300/60 hover:text-pink-400"} transition-colors`}>
+                    <span>❤️</span> <span>{post.reactions.coeur}</span>
+                  </button>
+                </div>
               </div>
 
               <FeedCommentSection postId={post.id} commentsCount={post.comments_count} userId={user?.id} postAuthorId={post.author_id} />
@@ -857,8 +913,12 @@ export default function Feed({ onTabChange }: FeedProps) {
       </div>
 
       <button onClick={() => { if (!user) { navigate("/auth"); return; } setShowNew(true); }}
-        className="fixed bottom-20 right-4 sm:right-[calc(50%-224px)] w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-xl flex items-center justify-center hover:scale-105 transition-transform z-30">
-        <Plus className="w-6 h-6" />
+        className="fixed bottom-24 right-4 sm:right-[calc(50%-224px)] w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center hover:scale-110 transition-transform z-30"
+        style={{
+          background: "linear-gradient(135deg, #7c3aed, #3b82f6)",
+          boxShadow: "0 0 25px rgba(124,58,237,0.5)",
+        }}>
+        <Plus className="w-7 h-7" />
       </button>
 
       {showNew && <NewPostModal onClose={() => setShowNew(false)} onSubmit={handleNewPost} />}
