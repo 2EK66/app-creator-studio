@@ -1,11 +1,57 @@
 import { useState, useEffect, useCallback } from "react";
 import { NewPostModal } from "@/components/mirec/NewPostModal";
 import { MirecLogo } from "@/components/mirec/MirecLogo";
-import { Plus, Bell, RefreshCw, MoreVertical, Pencil, Trash2, X, Check } from "lucide-react";
+import { Plus, Bell, RefreshCw, MoreVertical, Pencil, Trash2, X, Check, Mic, Volume2 } from "lucide-react";
 import { FeedCommentSection } from "@/components/mirec/FeedCommentSection";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+
+// ============================================================
+// TEMOIGNAGES FLASH DATA
+// ============================================================
+const flashTestimonies = [
+  {
+    id: "1",
+    name: "Agathe",
+    initials: "AG",
+    time: "il y a 3h",
+    content: "Alors la paix de Dieu qui surpasse tout...",
+    verse: "Philippiens 4:6-7",
+    isVocal: false,
+    bgColor: "from-purple-500/30 to-blue-500/30",
+  },
+  {
+    id: "2",
+    name: "Jean Marie",
+    initials: "JM",
+    time: "il y a 1h",
+    content: "",
+    verse: "",
+    isVocal: true,
+    bgColor: "from-indigo-500/30 to-purple-500/30",
+  },
+  {
+    id: "3",
+    name: "Justine",
+    initials: "JU",
+    time: "il y a 3h",
+    content: "Je rends grâce à Dieu, il a guéri ma fille",
+    verse: "",
+    isVocal: false,
+    bgColor: "from-pink-500/30 to-purple-500/30",
+  },
+  {
+    id: "4",
+    name: "Maxime",
+    initials: "M",
+    time: "il y a 3h",
+    content: "Dieu est fidèle! Il m'a exaucé!",
+    verse: "",
+    isVocal: false,
+    bgColor: "from-blue-500/30 to-indigo-500/30",
+  },
+];
 
 // ============================================================
 // TYPES
@@ -54,6 +100,61 @@ function getAvatarUrl(path: string | null): string | null {
   if (!path) return null;
   if (path.startsWith("http")) return path;
   return supabase.storage.from("avatars").getPublicUrl(path).data?.publicUrl || null;
+}
+
+// ============================================================
+// FLASH TESTIMONY BUBBLE
+// ============================================================
+function FlashBubble({ testimony }: { testimony: typeof flashTestimonies[0] }) {
+  return (
+    <div className="flex-shrink-0 relative group cursor-pointer">
+      {/* Glow effect */}
+      <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${testimony.bgColor} blur-xl opacity-60 group-hover:opacity-80 transition-opacity`} />
+      
+      {/* Bubble container */}
+      <div className={`relative w-28 h-28 rounded-full bg-gradient-to-br ${testimony.bgColor} border border-white/20 backdrop-blur-sm flex flex-col items-center justify-center p-2 overflow-hidden shadow-lg shadow-purple-500/20`}>
+        {/* Avatar */}
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center mb-1 border border-white/30">
+          <span className="text-white text-xs font-bold">{testimony.initials}</span>
+        </div>
+        
+        {/* Name and time */}
+        <p className="text-white text-[10px] font-semibold truncate max-w-full">{testimony.name}</p>
+        <p className="text-white/60 text-[8px]">{testimony.time}</p>
+        
+        {/* Content or vocal indicator */}
+        {testimony.isVocal ? (
+          <div className="flex items-center gap-1 mt-1">
+            <div className="flex items-center gap-0.5">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="w-0.5 bg-white/80 rounded-full animate-pulse"
+                  style={{
+                    height: `${4 + Math.random() * 8}px`,
+                    animationDelay: `${i * 0.1}s`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="text-white/80 text-[8px] text-center line-clamp-2 mt-0.5 px-1 italic">
+            {testimony.content.slice(0, 30)}...
+          </p>
+        )}
+        
+        {testimony.verse && (
+          <p className="text-amber-300/80 text-[7px] mt-0.5">{testimony.verse}</p>
+        )}
+      </div>
+      
+      {/* Amen button */}
+      <button className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[9px] font-medium shadow-lg hover:scale-105 transition-transform">
+        <span>🙏</span> Amen
+      </button>
+    </div>
+  );
 }
 
 // ============================================================
@@ -472,6 +573,57 @@ export default function Feed({ onTabChange }: FeedProps) {
         </div>
       </header>
 
+      {/* ============================================================ */}
+      {/* TEMOIGNAGES FLASH SECTION */}
+      {/* ============================================================ */}
+      <div className="relative overflow-hidden">
+        {/* Background with stars */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-purple-950/50 to-slate-900">
+          {/* Animated stars */}
+          {[...Array(30)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-0.5 h-0.5 bg-white rounded-full animate-pulse"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                opacity: 0.3 + Math.random() * 0.7,
+                animationDelay: `${Math.random() * 3}s`,
+                animationDuration: `${2 + Math.random() * 2}s`,
+              }}
+            />
+          ))}
+        </div>
+        
+        {/* Content */}
+        <div className="relative z-10 py-6">
+          {/* Title */}
+          <h2 className="text-center text-white font-semibold text-lg mb-4 drop-shadow-lg">
+            Temoignages Flash
+          </h2>
+          
+          {/* Bubbles carousel */}
+          <div className="flex gap-4 px-4 overflow-x-auto no-scrollbar pb-4">
+            {flashTestimonies.map((testimony) => (
+              <FlashBubble key={testimony.id} testimony={testimony} />
+            ))}
+          </div>
+          
+          {/* Central decoration - silhouette */}
+          <div className="flex justify-center mt-2">
+            <div className="text-center">
+              <p className="text-white/70 text-xs italic">Merci Seigneur pour cette journee benie !</p>
+              <button className="mt-2 flex items-center gap-1 px-3 py-1 mx-auto rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-medium shadow-lg hover:scale-105 transition-transform">
+                <span>🙏</span> Amen
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* FILTERS */}
+      {/* ============================================================ */}
       <div className="sticky top-[61px] z-20 bg-background/80 backdrop-blur-md px-4 py-2.5 border-b border-border/30">
         <div className="max-w-lg mx-auto flex gap-2 overflow-x-auto no-scrollbar">
           {filters.map(f => (
