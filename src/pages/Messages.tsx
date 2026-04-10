@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { MirecLogo } from "@/components/mirec/MirecLogo";
 import { MirecAvatar } from "@/components/mirec/Avatar";
-import { MessageCircle, ArrowLeft, Send, Search, X, Check, CheckCheck } from "lucide-react";
+import { MessageCircle, ArrowLeft, Send, Search, X, Check, CheckCheck, Paperclip, File, Image as ImageIcon, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 // ============================================================
@@ -26,6 +26,8 @@ interface DirectMessage {
   sender_id: string;
   receiver_id: string;
   is_read: boolean;
+  attachment_url?: string | null;
+  attachment_type?: string | null;
 }
 
 interface MessagesProps {
@@ -35,20 +37,6 @@ interface MessagesProps {
     avatarUrl?: string | null;
   };
   onTabChange?: (tab: string, state?: Record<string, any>) => void;
-}
-
-// ============================================================
-// INDICATEUR DE LECTURE
-// — ✓ gris  = envoyé mais pas lu
-// — ✓✓ bleu = lu par le destinataire
-// ============================================================
-function ReadReceipt({ isRead, isMe }: { isRead: boolean; isMe: boolean }) {
-  if (!isMe) return null;
-  return isRead ? (
-    <CheckCheck className="w-3 h-3 text-blue-400 inline-block ml-1 flex-shrink-0" />
-  ) : (
-    <Check className="w-3 h-3 text-primary-foreground/50 inline-block ml-1 flex-shrink-0" />
-  );
 }
 
 // ============================================================
@@ -65,7 +53,7 @@ function PhotoModal({ avatarUrl, name, initials, onClose }: {
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center" onClick={onClose}>
-      <button onClick={onClose} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+      <button onClick={onClose} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
         <X className="w-5 h-5 text-white" />
       </button>
       <p className="text-white font-semibold text-base mb-4 opacity-90">{name}</p>
@@ -83,25 +71,49 @@ function PhotoModal({ avatarUrl, name, initials, onClose }: {
 }
 
 // ============================================================
+// MODAL APERÇU PIÈCE JOINTE (image en grand)
+// ============================================================
+function AttachmentPreviewModal({ url, onClose }: { url: string; onClose: () => void }) {
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center" onClick={onClose}>
+      <button onClick={onClose} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
+        <X className="w-5 h-5 text-white" />
+      </button>
+      <img src={url} alt="Aperçu" className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg" />
+      <p className="text-white/40 text-xs mt-6">Appuie n'importe où pour fermer</p>
+    </div>
+  );
+}
+
+// ============================================================
 // COMPOSANT PRINCIPAL
 // ============================================================
 export default function Messages({ initialState = {}, onTabChange }: MessagesProps) {
-  const { user }       = useAuth();
-  const navigate       = useNavigate();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading]             = useState(true);
+  const [loading, setLoading] = useState(true);
   const [activePartner, setActivePartner] = useState<{
     id: string; name: string; avatarUrl?: string | null;
   } | null>(null);
-  const [messages, setMessages]     = useState<DirectMessage[]>([]);
+  const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [sending, setSending]       = useState(false);
-  const [searchQuery, setSearchQuery]     = useState("");
+  const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [photoModal, setPhotoModal] = useState<{ url: string | null; name: string; initials: string } | null>(null);
+  const [previewAttachment, setPreviewAttachment] = useState<string | null>(null);
   const [partnerOnline, setPartnerOnline] = useState(false);
 
   // ---- Utilitaire avatar ----
@@ -111,9 +123,85 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
     return supabase.storage.from("avatars").getPublicUrl(path).data?.publicUrl || null;
   };
 
-  // ============================================================
-  // MARQUER COMME LU — appelé dès qu'on ouvre une conversation
-  // ============================================================
+  // ---- Upload de fichier ----
+  const uploadAttachment = async (file: File): Promise<{ url: string; type: string } | null> => {
+    if (!user || !activePartner) return null;
+    const fileExt = file.name.split('.').pop();
+    const isImage = file.type.startsWith('image/');
+    const filePath = `${user.id}/${activePartner.id}/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('message_attachments')
+      .upload(filePath, file);
+    if (uploadError) {
+      console.error("Upload error:", uploadError);
+      alert("Erreur lors de l'envoi du fichier");
+      return null;
+    }
+    const { data: urlData } = supabase.storage.from('message_attachments').getPublicUrl(filePath);
+    return { url: urlData.publicUrl, type: isImage ? 'image' : 'file' };
+  };
+
+  // ---- Envoi de message avec ou sans pièce jointe ----
+  const sendDM = async (attachment?: { url: string; type: string }) => {
+    if ((!newMessage.trim() && !attachment) || !user || !activePartner || sending) return;
+    setSending(true);
+
+    const tempMsg: DirectMessage = {
+      id:          `temp-${Date.now()}`,
+      content:     newMessage.trim() || (attachment?.type === 'image' ? '📷 Image' : '📎 Fichier'),
+      created_at:  new Date().toISOString(),
+      sender_id:   user.id,
+      receiver_id: activePartner.id,
+      is_read:     false,
+      attachment_url: attachment?.url || null,
+      attachment_type: attachment?.type || null,
+    };
+
+    setMessages(prev => [...prev, tempMsg]);
+    setNewMessage("");
+    if (attachment && attachment.type === 'image') setUploading(false);
+
+    const { data, error } = await supabase
+      .from("direct_messages")
+      .insert({
+        sender_id: user.id,
+        receiver_id: activePartner.id,
+        content: tempMsg.content,
+        attachment_url: attachment?.url || null,
+        attachment_type: attachment?.type || null,
+      })
+      .select()
+      .single();
+
+    if (!error && data) {
+      setMessages(prev => prev.map(m => m.id === tempMsg.id ? data : m));
+    } else {
+      // fallback: retirer le message temporaire
+      setMessages(prev => prev.filter(m => m.id !== tempMsg.id));
+    }
+    setSending(false);
+    fetchConversations();
+  };
+
+  // ---- Gestion du choix de fichier ----
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { // 10 Mo max
+      alert("Le fichier ne doit pas dépasser 10 Mo");
+      return;
+    }
+    setUploading(true);
+    const attachment = await uploadAttachment(file);
+    if (attachment) {
+      await sendDM(attachment);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setUploading(false);
+  };
+
+  // ---- Marquer comme lu ----
   const markAsRead = useCallback(async (partnerId: string) => {
     if (!user) return;
     await supabase
@@ -124,9 +212,7 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
       .eq("is_read", false);
   }, [user]);
 
-  // ============================================================
-  // OUVRIR UNE CONVERSATION
-  // ============================================================
+  // ---- Ouvrir conversation ----
   const openConversation = useCallback(async (
     partnerId: string,
     partnerName: string,
@@ -142,21 +228,15 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
       .order("created_at", { ascending: true });
 
     setMessages(data || []);
-
-    // Marquer les messages reçus comme lus
     await markAsRead(partnerId);
   }, [user, markAsRead]);
 
-  // ============================================================
-  // REALTIME — écoute les nouveaux messages + mises à jour is_read
-  // ============================================================
+  // ---- Realtime ----
   useEffect(() => {
     if (!user || !activePartner) return;
 
     const channel = supabase
       .channel(`dm-${user.id}-${activePartner.id}`)
-
-      // Nouveau message reçu
       .on("postgres_changes", {
         event: "INSERT",
         schema: "public",
@@ -166,12 +246,8 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
         const msg = payload.new as DirectMessage;
         if (msg.sender_id !== activePartner.id) return;
         setMessages(prev => [...prev, msg]);
-        // Marquer immédiatement comme lu puisqu'on est dans la conversation
         await markAsRead(activePartner.id);
       })
-
-      // is_read mis à jour → mettre à jour l'état local
-      // (quand le destinataire lit nos messages)
       .on("postgres_changes", {
         event: "UPDATE",
         schema: "public",
@@ -185,19 +261,14 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
           );
         }
       })
-
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [user, activePartner, markAsRead]);
 
-  // ============================================================
-  // REALTIME PRÉSENCE — voir si le partenaire est en ligne
-  // (optionnel, désactiver si la table presence n'existe pas)
-  // ============================================================
+  // ---- Présence ----
   useEffect(() => {
     if (!user || !activePartner) return;
-
     const presence = supabase.channel(`presence-${activePartner.id}`)
       .on("presence", { event: "sync" }, () => {
         const state = presence.presenceState();
@@ -208,13 +279,10 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
           await presence.track({ user_id: user.id, online_at: new Date().toISOString() });
         }
       });
-
     return () => { supabase.removeChannel(presence); };
   }, [user, activePartner]);
 
-  // ============================================================
-  // INITIALSTATE — ouvrir directement depuis le Feed
-  // ============================================================
+  // ---- Ouverture automatique depuis Feed ----
   useEffect(() => {
     if (!user) return;
     if (initialState?.openConversationWith) {
@@ -223,22 +291,17 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
       const avatar      = initialState.avatarUrl ? getAvatarUrl(initialState.avatarUrl) : null;
       openConversation(partnerId, partnerName, avatar);
     }
-  }, [user, initialState?.openConversationWith]);
+  }, [user, initialState?.openConversationWith, openConversation]);
 
-  // ============================================================
-  // SCROLL AUTO EN BAS
-  // ============================================================
+  // ---- Scroll auto ----
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ============================================================
-  // CHARGER LES CONVERSATIONS
-  // ============================================================
+  // ---- Charger conversations ----
   const fetchConversations = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-
     const { data: msgs } = await supabase
       .from("direct_messages").select("*")
       .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
@@ -281,44 +344,7 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
 
   useEffect(() => { if (user) fetchConversations(); }, [user, fetchConversations]);
 
-  // ============================================================
-  // ENVOYER UN MESSAGE
-  // ============================================================
-  const sendDM = async () => {
-    if (!newMessage.trim() || !user || !activePartner || sending) return;
-    setSending(true);
-
-    const tempMsg: DirectMessage = {
-      id:          `temp-${Date.now()}`,
-      content:     newMessage.trim(),
-      created_at:  new Date().toISOString(),
-      sender_id:   user.id,
-      receiver_id: activePartner.id,
-      is_read:     false,
-    };
-
-    // Optimistic update
-    setMessages(prev => [...prev, tempMsg]);
-    setNewMessage("");
-
-    const { data, error } = await supabase
-      .from("direct_messages")
-      .insert({ sender_id: user.id, receiver_id: activePartner.id, content: tempMsg.content })
-      .select()
-      .single();
-
-    if (!error && data) {
-      // Remplacer le message temporaire par le vrai
-      setMessages(prev => prev.map(m => m.id === tempMsg.id ? data : m));
-    }
-
-    setSending(false);
-    fetchConversations();
-  };
-
-  // ============================================================
-  // RECHERCHE MEMBRES
-  // ============================================================
+  // ---- Recherche ----
   const searchUsers = async (q: string) => {
     setSearchQuery(q);
     if (q.length < 2) { setSearchResults([]); return; }
@@ -363,16 +389,12 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
 
     return (
       <div className="min-h-screen bg-background flex flex-col pb-20">
-
-        {/* Header conversation */}
         <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-lg border-b border-border/50 px-4 py-3">
           <div className="max-w-lg mx-auto flex items-center gap-3">
             <button onClick={() => { setActivePartner(null); fetchConversations(); }}
               className="p-1.5 rounded-full hover:bg-muted transition-colors flex-shrink-0">
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
-
-            {/* Avatar partenaire → photo en grand */}
             <button
               onClick={() => setPhotoModal({ url: activePartner.avatarUrl || null, name: activePartner.name, initials: partnerInitials })}
               className="flex-shrink-0 rounded-full overflow-hidden hover:scale-105 transition-all focus:outline-none"
@@ -384,10 +406,8 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
                   </div>
               }
             </button>
-
             <div className="flex-1 min-w-0">
               <p className="font-bold text-sm text-foreground truncate">{activePartner.name}</p>
-              {/* Indicateur en ligne */}
               <div className="flex items-center gap-1">
                 <div className={`w-1.5 h-1.5 rounded-full ${partnerOnline ? "bg-green-500" : "bg-muted-foreground/40"}`} />
                 <span className="text-[10px] text-muted-foreground">
@@ -414,14 +434,11 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
             const isMe      = msg.sender_id === user.id;
             const prevMsg   = index > 0 ? messages[index - 1] : null;
             const isNewGroup = !prevMsg || prevMsg.sender_id !== msg.sender_id;
-
-            // Afficher l'heure seulement si > 5 min depuis le msg précédent
             const showTime = !prevMsg ||
               (new Date(msg.created_at).getTime() - new Date(prevMsg.created_at).getTime()) > 5 * 60 * 1000;
 
             return (
               <div key={msg.id}>
-                {/* Séparateur de temps */}
                 {showTime && (
                   <div className="flex items-center justify-center my-3">
                     <span className="text-[10px] text-muted-foreground bg-muted px-3 py-1 rounded-full">
@@ -431,8 +448,6 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
                 )}
 
                 <div className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"} ${isNewGroup ? "mt-2" : "mt-0.5"}`}>
-
-                  {/* Avatar partenaire (gauche) */}
                   {!isMe && isNewGroup && (
                     <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mb-0.5"
                       style={{ backgroundColor: "hsl(220 70% 35%)" }}>
@@ -444,17 +459,30 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
                   )}
                   {!isMe && !isNewGroup && <div className="w-6 flex-shrink-0" />}
 
-                  {/* Bulle de message */}
                   <div className={`max-w-[72%] ${isMe ? "items-end" : "items-start"} flex flex-col`}>
                     <div className={`rounded-2xl px-3.5 py-2.5 ${
                       isMe
                         ? "bg-primary text-primary-foreground rounded-br-sm"
                         : "bg-card border border-border/50 text-foreground rounded-bl-sm"
                     }`}>
-                      <p className="text-sm leading-relaxed break-words">{msg.content}</p>
+                      {/* Pièce jointe image */}
+                      {msg.attachment_url && msg.attachment_type === 'image' && (
+                        <button onClick={() => setPreviewAttachment(msg.attachment_url!)} className="block mb-1">
+                          <img src={msg.attachment_url} alt="pièce jointe" className="max-w-[200px] max-h-[150px] rounded-lg object-cover" />
+                        </button>
+                      )}
+                      {/* Pièce jointe fichier */}
+                      {msg.attachment_url && msg.attachment_type === 'file' && (
+                        <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm bg-black/5 dark:bg-white/10 rounded-lg px-3 py-2 mb-1">
+                          <File className="w-4 h-4" />
+                          <span className="truncate">Fichier joint</span>
+                          <Download className="w-3 h-3" />
+                        </a>
+                      )}
+                      {msg.content && <p className="text-sm leading-relaxed break-words">{msg.content}</p>}
                     </div>
 
-                    {/* Statut lecture — affiché seulement pour nos messages */}
                     {isMe && (
                       <div className={`flex items-center gap-1 mt-0.5 ${isMe ? "justify-end" : "justify-start"}`}>
                         {msg.is_read ? (
@@ -475,13 +503,32 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
               </div>
             );
           })}
-
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Zone saisie */}
+        {/* Zone saisie avec bouton pièce jointe */}
         <div className="sticky bottom-20 bg-card border-t border-border/50 px-4 py-3">
           <div className="max-w-lg mx-auto flex gap-2 items-center">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              accept="image/*,application/pdf,.doc,.docx,.txt,.mp3,.mp4"
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="flex-shrink-0 w-10 h-10 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 flex items-center justify-center transition-colors disabled:opacity-50"
+              title="Joindre un fichier"
+            >
+              {uploading ? (
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Paperclip className="w-4 h-4" />
+              )}
+            </button>
+
             <input
               value={newMessage}
               onChange={e => setNewMessage(e.target.value)}
@@ -490,8 +537,8 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
               className="flex-1 px-4 py-2.5 rounded-full border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
             />
             <button
-              onClick={sendDM}
-              disabled={!newMessage.trim() || sending}
+              onClick={() => sendDM()}
+              disabled={(!newMessage.trim() && !uploading) || sending}
               className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50 flex-shrink-0">
               {sending
                 ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -501,16 +548,19 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
           </div>
         </div>
 
-        {/* Modal photo */}
+        {/* Modals */}
         {photoModal && (
           <PhotoModal avatarUrl={photoModal.url} name={photoModal.name} initials={photoModal.initials} onClose={() => setPhotoModal(null)} />
+        )}
+        {previewAttachment && (
+          <AttachmentPreviewModal url={previewAttachment} onClose={() => setPreviewAttachment(null)} />
         )}
       </div>
     );
   }
 
   // ============================================================
-  // LISTE DES CONVERSATIONS
+  // LISTE DES CONVERSATIONS (inchangée)
   // ============================================================
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -519,7 +569,6 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
           <div className="flex items-center gap-2.5">
             <MessageCircle className="w-5 h-5 text-primary" />
             <h1 className="font-display text-xl font-bold text-foreground">Messages</h1>
-            {/* Badge total non lus */}
             {conversations.reduce((s, c) => s + c.unread, 0) > 0 && (
               <span className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
                 {conversations.reduce((s, c) => s + c.unread, 0)}
@@ -532,7 +581,6 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
         </div>
       </header>
 
-      {/* Recherche */}
       {showSearch && (
         <div className="max-w-lg mx-auto px-4 pt-3 pb-2">
           <input value={searchQuery} onChange={e => searchUsers(e.target.value)}
@@ -556,7 +604,6 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
         </div>
       )}
 
-      {/* Liste conversations */}
       <div className="max-w-lg mx-auto px-4 py-3 space-y-1">
         {loading ? (
           <div className="flex justify-center py-12">
