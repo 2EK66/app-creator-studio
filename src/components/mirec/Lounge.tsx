@@ -17,7 +17,6 @@ interface Flash {
   created_at: string;
   amen_count: number;
   my_amen: boolean;
-  is_read: boolean;
 }
 
 // ============================================================
@@ -38,7 +37,7 @@ function timeLeft(iso: string): string {
 }
 
 // ============================================================
-// PARTICULES AMEN — explosion de petites étoiles
+// PARTICULES AMEN
 // ============================================================
 function AmenParticles({ x, y, onDone }: { x: number; y: number; onDone: () => void }) {
   useEffect(() => {
@@ -94,7 +93,8 @@ function FlashBubble({
   const [hovered, setHovered] = useState(false);
   const dim = size === "lg" ? 120 : size === "md" ? 96 : 76;
   const avatarDim = size === "lg" ? 56 : size === "md" ? 44 : 34;
-  const initials = flash.author_name.slice(0, 2).toUpperCase();
+  const safeName = flash.author_name || "?";
+  const initials = safeName.slice(0, 2).toUpperCase();
 
   const typeColors: Record<string, { from: string; to: string; glow: string }> = {
     text:  { from: "#1A4B9B", to: "#7C3AED", glow: "rgba(124,58,237,0.5)" },
@@ -115,22 +115,20 @@ function FlashBubble({
       onMouseLeave={() => setHovered(false)}
       onClick={() => onOpen(flash)}
     >
-      {/* AURA lumineuse si non lu */}
-      {!flash.is_read && (
-        <div
-          className="absolute rounded-full transition-all duration-300"
-          style={{
-            width: dim + 16,
-            height: dim + 16,
-            top: -8,
-            left: -8,
-            background: `radial-gradient(circle, ${colors.glow} 0%, transparent 70%)`,
-            animation: "aura-pulse 2s ease-in-out infinite",
-          }}
-        />
-      )}
+      {/* AURA lumineuse — toujours active pour les flashes récents */}
+      <div
+        className="absolute rounded-full transition-all duration-300"
+        style={{
+          width: dim + 16,
+          height: dim + 16,
+          top: -8,
+          left: -8,
+          background: `radial-gradient(circle, ${colors.glow} 0%, transparent 70%)`,
+          animation: "aura-pulse 2s ease-in-out infinite",
+        }}
+      />
 
-      {/* BULLE principale — forme organique via border-radius */}
+      {/* BULLE principale */}
       <div
         className="relative overflow-hidden transition-transform duration-300"
         style={{
@@ -139,15 +137,11 @@ function FlashBubble({
           borderRadius: hovered
             ? "40% 60% 55% 45% / 50% 45% 55% 50%"
             : "45% 55% 60% 40% / 55% 40% 60% 45%",
-          background: flash.is_read
-            ? "var(--card)"
-            : `linear-gradient(135deg, ${colors.from}22, ${colors.to}33)`,
-          border: flash.is_read
-            ? "1.5px solid var(--border)"
-            : `2px solid ${colors.from}88`,
+          background: `linear-gradient(135deg, ${colors.from}22, ${colors.to}33)`,
+          border: `2px solid ${colors.from}88`,
           boxShadow: hovered
             ? `0 8px 24px ${colors.glow}, 0 2px 8px rgba(0,0,0,0.2)`
-            : flash.is_read ? "0 2px 8px rgba(0,0,0,0.1)" : `0 4px 16px ${colors.glow}`,
+            : `0 4px 16px ${colors.glow}`,
           transform: hovered ? "scale(1.08)" : "scale(1)",
           transition: "all 0.3s ease",
         }}
@@ -158,7 +152,7 @@ function FlashBubble({
             className="rounded-full overflow-hidden border-2 flex-shrink-0"
             style={{
               width: avatarDim, height: avatarDim,
-              borderColor: flash.is_read ? "var(--border)" : colors.from,
+              borderColor: colors.from,
             }}
           >
             {flash.author_avatar ? (
@@ -172,11 +166,10 @@ function FlashBubble({
           </div>
 
           <p className="text-[9px] font-semibold text-center truncate w-full px-1"
-            style={{ color: flash.is_read ? "var(--foreground)" : colors.from, lineHeight: 1.2 }}>
-            {flash.author_name.split(" ")[0]}
+            style={{ color: colors.from, lineHeight: 1.2 }}>
+            {safeName.split(" ")[0]}
           </p>
 
-          {/* Type badge */}
           <span className="text-[8px]">
             {flash.type === "audio" ? "🎤" : flash.type === "verse" ? "📖" : "✨"}
           </span>
@@ -204,7 +197,6 @@ function FlashBubble({
         🙏 Amen {flash.amen_count > 0 && `(${flash.amen_count})`}
       </button>
 
-      {/* Temps restant */}
       <p className="text-[8px] text-muted-foreground/60">{timeLeft(flash.created_at)}</p>
     </div>
   );
@@ -241,13 +233,11 @@ function FlashDetail({ flash, onClose, onAmen }: {
         }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Fermer */}
         <button onClick={onClose}
           className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center z-10">
           <X className="w-4 h-4 text-white" />
         </button>
 
-        {/* Header */}
         <div className="flex items-center gap-3 p-5 pb-3">
           <div className="w-12 h-12 rounded-full overflow-hidden border-2 flex-shrink-0"
             style={{ borderColor: colors.from }}>
@@ -269,7 +259,6 @@ function FlashDetail({ flash, onClose, onAmen }: {
           </div>
         </div>
 
-        {/* Contenu */}
         <div className="px-5 pb-4">
           {flash.type === "audio" ? (
             <div className="bg-white/10 rounded-2xl p-4 flex items-center gap-3">
@@ -289,7 +278,6 @@ function FlashDetail({ flash, onClose, onAmen }: {
           )}
         </div>
 
-        {/* Bouton AMEN centré */}
         <div className="px-5 pb-5 flex flex-col items-center gap-2">
           <button
             onClick={(e) => onAmen(flash.id, e)}
@@ -354,7 +342,6 @@ function NewFlashModal({ onClose, onSubmit }: {
           <button onClick={onClose} className="p-1.5 rounded-full hover:bg-muted"><X className="w-4 h-4 text-muted-foreground" /></button>
         </div>
 
-        {/* Type */}
         <div className="flex gap-2">
           {(Object.keys(typeConfig) as Array<"text" | "verse">).map(t => (
             <button key={t} onClick={() => setType(t)}
@@ -365,7 +352,6 @@ function NewFlashModal({ onClose, onSubmit }: {
           ))}
         </div>
 
-        {/* Contenu */}
         <textarea
           value={content}
           onChange={e => setContent(e.target.value)}
@@ -397,77 +383,82 @@ export default function Louange() {
 
   const [flashes, setFlashes]       = useState<Flash[]>([]);
   const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState<string | null>(null);
   const [showNew, setShowNew]       = useState(false);
   const [selectedFlash, setSelectedFlash] = useState<Flash | null>(null);
   const [particles, setParticles]   = useState<{ id: number; x: number; y: number }[]>([]);
   const particleId = useRef(0);
 
-  // ---- Charger les flashes (posts type flash/testimony/verse des 24h) ----
   const fetchFlashes = useCallback(async () => {
     setLoading(true);
-    const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    setError(null);
+    try {
+      const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+      const { data: posts, error: postsError } = await supabase
+        .from("posts")
+        .select("id, content, type, created_at, author_id")
+        .in("type", ["testimony", "verse", "flash"])
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(20);
 
-    const { data: posts } = await supabase
-      .from("posts")
-      .select("id, content, type, created_at, author_id")
-      .in("type", ["testimony", "verse", "flash"])
-      .gte("created_at", since)
-      .order("created_at", { ascending: false })
-      .limit(20);
+      if (postsError) throw postsError;
+      if (!posts || posts.length === 0) {
+        setFlashes([]);
+        setLoading(false);
+        return;
+      }
 
-    if (!posts) { setLoading(false); return; }
+      const authorIds = [...new Set(posts.map(p => p.author_id).filter(Boolean))];
+      const { data: profiles } = await supabase
+        .from("profiles").select("id, full_name, avatar_url").in("id", authorIds);
+      const profileMap = Object.fromEntries(
+        (profiles || []).map(p => [p.id, { name: p.full_name || "Membre", avatar: getAvatarUrl(p.avatar_url) }])
+      );
 
-    // Profils
-    const authorIds = [...new Set(posts.map(p => p.author_id))];
-    const { data: profiles } = await supabase
-      .from("profiles").select("id, full_name, avatar_url").in("id", authorIds);
-    const profileMap = Object.fromEntries(
-      (profiles || []).map(p => [p.id, { name: p.full_name || "Membre", avatar: getAvatarUrl(p.avatar_url) }])
-    );
+      const postIds = posts.map(p => p.id);
+      const { data: reactions } = await supabase
+        .from("reactions").select("content_id, author_id, type")
+        .in("content_id", postIds).eq("type", "amen");
 
-    // Réactions "amen"
-    const postIds = posts.map(p => p.id);
-    const { data: reactions } = await supabase
-      .from("reactions").select("content_id, author_id, type")
-      .in("content_id", postIds).eq("type", "amen");
+      const enriched: Flash[] = posts.map(post => {
+        const prof = profileMap[post.author_id] || { name: "Membre", avatar: null };
+        const amens = reactions?.filter(r => r.content_id === post.id) || [];
+        return {
+          id:            post.id,
+          author_id:     post.author_id,
+          author_name:   prof.name,
+          author_avatar: prof.avatar,
+          content:       post.content,
+          type:          (post.type === "verse" ? "verse" : "text") as "text" | "audio" | "verse",
+          created_at:    post.created_at,
+          amen_count:    amens.length,
+          my_amen:       amens.some(r => r.author_id === user?.id),
+        };
+      });
 
-    const enriched: Flash[] = posts.map(post => {
-      const prof  = profileMap[post.author_id] || { name: "Membre", avatar: null };
-      const amens = reactions?.filter(r => r.content_id === post.id) || [];
-      return {
-        id:           post.id,
-        author_id:    post.author_id,
-        author_name:  prof.name,
-        author_avatar: prof.avatar,
-        content:      post.content,
-        type:         (post.type === "verse" ? "verse" : "text") as "text" | "audio" | "verse",
-        created_at:   post.created_at,
-        amen_count:   amens.length,
-        my_amen:      amens.some(r => r.author_id === user?.id),
-        is_read:      false,
-      };
-    });
-
-    setFlashes(enriched);
-    setLoading(false);
+      setFlashes(enriched);
+    } catch (err) {
+      console.error("Erreur chargement flashes:", err);
+      setError("Impossible de charger les témoignages. Réessaie plus tard.");
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => { fetchFlashes(); }, [fetchFlashes]);
 
-  // ---- Amen ----
   const handleAmen = async (postId: string, e: React.MouseEvent) => {
     if (!user) { navigate("/auth"); return; }
 
-    // Particules
     const rect = (e.target as HTMLElement).getBoundingClientRect();
-    const pid  = particleId.current++;
+    const pid = particleId.current++;
     setParticles(prev => [...prev, { id: pid, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }]);
 
-    const flash    = flashes.find(f => f.id === postId);
+    const flash = flashes.find(f => f.id === postId);
     if (!flash) return;
-    const wasAmen  = flash.my_amen;
+    const wasAmen = flash.my_amen;
 
-    // Optimistic update
     setFlashes(prev => prev.map(f => f.id === postId ? {
       ...f,
       my_amen:    !wasAmen,
@@ -486,7 +477,6 @@ export default function Louange() {
     }
   };
 
-  // ---- Nouveau flash ----
   const handleNewFlash = async (data: { content: string; type: "text" | "verse" }) => {
     if (!user) return;
     await supabase.from("posts").insert({
@@ -497,13 +487,10 @@ export default function Louange() {
     fetchFlashes();
   };
 
-  // ---- Tailles variables pour les bulles (effet organique) ----
   const sizes: Array<"sm" | "md" | "lg"> = ["md", "lg", "md", "sm", "md", "lg", "sm", "md"];
 
   return (
     <div className="min-h-screen pb-24 relative overflow-hidden" style={{ background: "var(--background)" }}>
-
-      {/* STYLES ANIMATIONS */}
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -529,13 +516,11 @@ export default function Louange() {
         }
       `}</style>
 
-      {/* FOND DÉGRADÉ ANIMÉ */}
       <div className="fixed inset-0 -z-10 pointer-events-none" style={{
         background: "radial-gradient(ellipse at 20% 20%, rgba(26,75,155,0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.1) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(217,119,6,0.06) 0%, transparent 60%), var(--background)",
         animation: "bg-shift 12s ease-in-out infinite",
       }} />
 
-      {/* ÉTOILES DE FOND */}
       {Array.from({ length: 20 }, (_, i) => (
         <div key={i} className="fixed rounded-full pointer-events-none -z-10"
           style={{
@@ -551,7 +536,6 @@ export default function Louange() {
         />
       ))}
 
-      {/* HEADER */}
       <header className="sticky top-0 z-30 px-4 py-3" style={{
         background: "rgba(var(--card-rgb, 255,255,255), 0.7)",
         backdropFilter: "blur(16px)",
@@ -572,7 +556,6 @@ export default function Louange() {
         </div>
       </header>
 
-      {/* ZONE BULLES FLOTTANTES */}
       <div className="max-w-lg mx-auto px-4 pt-6 pb-4">
         <div className="flex items-center gap-2 mb-4">
           <span className="text-sm font-bold text-foreground">✨ Témoignages Flash</span>
@@ -583,6 +566,8 @@ export default function Louange() {
           <div className="flex justify-center py-16">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
+        ) : error ? (
+          <div className="text-center py-16 text-destructive text-sm">{error}</div>
         ) : flashes.length === 0 ? (
           <div className="flex flex-col items-center py-16 text-center">
             <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
@@ -597,11 +582,9 @@ export default function Louange() {
             </button>
           </div>
         ) : (
-          /* GRILLE DE BULLES — disposition organique */
           <div className="relative">
-            {/* Ligne 1 — bulles principales */}
             <div className="flex items-end justify-around gap-2 mb-4">
-              {flashes.slice(0, Math.min(4, flashes.length)).map((flash, i) => (
+              {flashes.slice(0, 4).map((flash, i) => (
                 <FlashBubble
                   key={flash.id}
                   flash={flash}
@@ -612,11 +595,9 @@ export default function Louange() {
                 />
               ))}
             </div>
-
-            {/* Ligne 2 — si plus de 4 flashes */}
             {flashes.length > 4 && (
               <div className="flex items-end justify-around gap-2 mb-4">
-                {flashes.slice(4, Math.min(8, flashes.length)).map((flash, i) => (
+                {flashes.slice(4, 8).map((flash, i) => (
                   <FlashBubble
                     key={flash.id}
                     flash={flash}
@@ -628,8 +609,6 @@ export default function Louange() {
                 ))}
               </div>
             )}
-
-            {/* Ligne 3 */}
             {flashes.length > 8 && (
               <div className="flex items-end justify-around gap-2">
                 {flashes.slice(8, 12).map((flash, i) => (
@@ -648,7 +627,6 @@ export default function Louange() {
         )}
       </div>
 
-      {/* SECTION LOUANGE */}
       <div className="max-w-lg mx-auto px-4 pb-4">
         <div className="flex items-center gap-2 mb-3 mt-4">
           <span className="text-sm font-bold text-foreground">🎶 Espace Louange</span>
@@ -677,7 +655,6 @@ export default function Louange() {
         </div>
       </div>
 
-      {/* FAB — nouveau flash */}
       <button
         onClick={() => { if (!user) { navigate("/auth"); return; } setShowNew(true); }}
         className="fixed bottom-20 right-4 sm:right-[calc(50%-224px)] w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center hover:scale-105 transition-transform z-30"
@@ -685,11 +662,9 @@ export default function Louange() {
         <Plus className="w-6 h-6" />
       </button>
 
-      {/* MODALS */}
       {showNew && <NewFlashModal onClose={() => setShowNew(false)} onSubmit={handleNewFlash} />}
       {selectedFlash && <FlashDetail flash={selectedFlash} onClose={() => setSelectedFlash(null)} onAmen={handleAmen} />}
 
-      {/* PARTICULES AMEN */}
       {particles.map(p => (
         <AmenParticles
           key={p.id}
