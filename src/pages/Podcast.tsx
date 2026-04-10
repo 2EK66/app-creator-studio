@@ -11,6 +11,7 @@ function CreatorRequestModal({ onClose }: { onClose: () => void }) {
   const { user } = useAuth();
   const [step, setStep] = useState<"form" | "success">("form");
   const [sending, setSending] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const [form, setForm] = useState({
     full_name:   "",
@@ -26,21 +27,30 @@ function CreatorRequestModal({ onClose }: { onClose: () => void }) {
 
   const handleSubmit = async () => {
     if (!form.full_name || !form.ministry || !form.description || !form.contact) return;
+    if (!user) {
+      setErrorMsg("Vous devez être connecté pour faire une demande.");
+      return;
+    }
     setSending(true);
+    setErrorMsg("");
     try {
-      await (supabase.from("podcast_creator_requests" as any) as any).insert({
-        user_id:      user?.id,
-        email:        user?.email,
-        full_name:    form.full_name,
-        ministry:     form.ministry,
-        creator_type: form.creator_type,
-        description:  form.description,
-        contact:      form.contact,
-        status:       "pending",
-      });
+      const { error } = await supabase
+        .from("podcast_creator_requests")
+        .insert({
+          user_id: user.id,
+          email: user.email,
+          full_name: form.full_name,
+          ministry: form.ministry,
+          creator_type: form.creator_type,
+          description: form.description,
+          contact: form.contact,
+          status: "pending",
+        });
+      if (error) throw error;
       setStep("success");
     } catch (e) {
       console.error(e);
+      setErrorMsg("Erreur lors de l'envoi. Réessaie plus tard.");
     } finally {
       setSending(false);
     }
@@ -125,6 +135,10 @@ function CreatorRequestModal({ onClose }: { onClose: () => void }) {
                   className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30" />
               </div>
 
+              {errorMsg && (
+                <p className="text-xs text-destructive text-center">{errorMsg}</p>
+              )}
+
               <button
                 onClick={handleSubmit}
                 disabled={sending || !form.full_name || !form.ministry || !form.description || !form.contact}
@@ -165,20 +179,15 @@ export default function Podcast() {
 
       {/* HERO */}
       <div className="relative overflow-hidden">
-        {/* Fond dégradé */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-primary/5 to-background" />
         <div className="relative px-6 pt-14 pb-10 flex flex-col items-center text-center">
-          {/* Badge */}
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-5">
             <Lock className="w-3 h-3 text-primary" />
             <span className="text-[11px] font-semibold text-primary">Bientôt disponible</span>
           </div>
-
-          {/* Icône principale */}
           <div className="w-20 h-20 rounded-3xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30 mb-5">
             <Radio className="w-10 h-10 text-white" />
           </div>
-
           <h1 className="font-bold text-2xl text-foreground mb-3 leading-tight">
             MIREC Podcast &<br />Enseignements
           </h1>
