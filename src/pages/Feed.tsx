@@ -574,49 +574,153 @@ export default function Feed({ onTabChange }: FeedProps) {
       </header>
 
       {/* ============================================================ */}
-      {/* TEMOIGNAGES FLASH SECTION */}
+      {/* TEMOIGNAGES FLASH SECTION - Design lumineux avec bulles */}
       {/* ============================================================ */}
-      <div className="relative overflow-hidden">
-        {/* Background with stars */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-purple-950/50 to-slate-900">
-          {/* Animated stars */}
-          {[...Array(30)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-0.5 h-0.5 bg-white rounded-full animate-pulse"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                opacity: 0.3 + Math.random() * 0.7,
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${2 + Math.random() * 2}s`,
-              }}
-            />
-          ))}
-        </div>
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translate(-50%, -50%) translateY(0px); }
+          50% { transform: translate(-50%, -50%) translateY(-10px); }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 0.4; transform: scale(1); }
+          50% { opacity: 0.7; transform: scale(1.05); }
+        }
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 1; }
+        }
+      `}</style>
+      
+      <div className="relative h-[340px] overflow-hidden" style={{
+        background: "linear-gradient(180deg, #0a0a1a 0%, #1a1035 50%, #0f0a20 100%)",
+      }}>
+        {/* ETOILES SCINTILLANTES */}
+        {Array.from({ length: 50 }, (_, i) => (
+          <div key={i} className="absolute rounded-full pointer-events-none"
+            style={{
+              width: Math.random() * 2 + 1,
+              height: Math.random() * 2 + 1,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              background: "#fff",
+              animation: `twinkle ${2 + Math.random() * 3}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 3}s`,
+            }}
+          />
+        ))}
         
-        {/* Content */}
-        <div className="relative z-10 py-6">
-          {/* Title */}
-          <h2 className="text-center text-white font-semibold text-lg mb-4 drop-shadow-lg">
-            Temoignages Flash
-          </h2>
+        {/* Title */}
+        <h2 className="text-center text-white font-semibold text-lg pt-4 mb-2 drop-shadow-lg">
+          Temoignages Flash
+        </h2>
+        
+        {/* BULLES CIRCULAIRES LUMINEUSES - Positionnees organiquement */}
+        <div className="relative h-[280px]">
+          {flashTestimonies.map((testimony, i) => {
+            const positions = [
+              { x: 15, y: 25, size: 100 },
+              { x: 40, y: 15, size: 110 },
+              { x: 75, y: 30, size: 95 },
+              { x: 88, y: 18, size: 85 },
+            ];
+            const pos = positions[i] || positions[0];
+            
+            return (
+              <div
+                key={testimony.id}
+                className="absolute flex flex-col items-center cursor-pointer"
+                style={{
+                  left: `${pos.x}%`,
+                  top: `${pos.y}%`,
+                  transform: "translate(-50%, -50%)",
+                  animation: `float ${4 + Math.random() * 2}s ease-in-out infinite`,
+                }}
+              >
+                {/* Outer glow ring */}
+                <div
+                  className="absolute rounded-full"
+                  style={{
+                    width: pos.size + 30,
+                    height: pos.size + 30,
+                    background: "radial-gradient(circle, rgba(147,112,219,0.4) 0%, rgba(138,43,226,0.2) 40%, transparent 70%)",
+                    animation: "pulse-glow 3s ease-in-out infinite",
+                  }}
+                />
+                
+                {/* Inner glow ring */}
+                <div
+                  className="absolute rounded-full"
+                  style={{
+                    width: pos.size + 16,
+                    height: pos.size + 16,
+                    border: "2px solid rgba(186,85,211,0.5)",
+                    boxShadow: "0 0 20px rgba(186,85,211,0.4), inset 0 0 20px rgba(186,85,211,0.2)",
+                  }}
+                />
+
+                {/* Main bubble */}
+                <div
+                  className="relative rounded-full overflow-hidden flex flex-col items-center justify-center transition-transform duration-300 hover:scale-110"
+                  style={{
+                    width: pos.size,
+                    height: pos.size,
+                    background: "linear-gradient(145deg, rgba(25,25,50,0.9) 0%, rgba(40,30,80,0.8) 100%)",
+                    border: "2px solid rgba(186,85,211,0.6)",
+                    boxShadow: "0 0 20px rgba(186,85,211,0.3)",
+                  }}
+                >
+                  {/* Avatar */}
+                  <div
+                    className="rounded-full overflow-hidden border-2 border-purple-400/50 mb-1 flex items-center justify-center"
+                    style={{ width: pos.size * 0.35, height: pos.size * 0.35, background: "linear-gradient(135deg, #9333ea, #3b82f6)" }}
+                  >
+                    <span className="text-white font-bold text-xs">{testimony.initials}</span>
+                  </div>
+                  
+                  {/* Name */}
+                  <p className="text-[10px] font-semibold text-white/90 text-center px-1 truncate w-full">
+                    {testimony.name}
+                  </p>
+                  <p className="text-[8px] text-purple-300/70">{testimony.time}</p>
+                </div>
+
+                {/* Preview text below bubble */}
+                <div className="mt-2 max-w-[100px] text-center">
+                  {testimony.isVocal ? (
+                    <p className="text-[9px] text-purple-200/80 italic">Temoignage vocal</p>
+                  ) : (
+                    <p className="text-[9px] text-purple-200/80 italic line-clamp-2 leading-tight">
+                      {testimony.content.slice(0, 40)}...
+                    </p>
+                  )}
+                  {testimony.verse && (
+                    <p className="text-[8px] text-yellow-400/70 mt-0.5">{testimony.verse}</p>
+                  )}
+                </div>
+
+                {/* Amen button */}
+                <button
+                  className="mt-2 flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-semibold transition-all duration-200 active:scale-90"
+                  style={{
+                    background: "linear-gradient(135deg, #059669, #14b8a6)",
+                    color: "#fff",
+                    border: "1px solid rgba(5,150,105,0.5)",
+                    boxShadow: "0 0 10px rgba(5,150,105,0.4)",
+                  }}
+                >
+                  <span>🙏</span> Amen
+                </button>
+              </div>
+            );
+          })}
           
-          {/* Bubbles carousel */}
-          <div className="flex gap-4 px-4 overflow-x-auto no-scrollbar pb-4">
-            {flashTestimonies.map((testimony) => (
-              <FlashBubble key={testimony.id} testimony={testimony} />
-            ))}
-          </div>
-          
-          {/* Central decoration - silhouette */}
-          <div className="flex justify-center mt-2">
-            <div className="text-center">
-              <p className="text-white/70 text-xs italic">Merci Seigneur pour cette journee benie !</p>
-              <button className="mt-2 flex items-center gap-1 px-3 py-1 mx-auto rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-medium shadow-lg hover:scale-105 transition-transform">
-                <span>🙏</span> Amen
-              </button>
-            </div>
+          {/* Central decorative message */}
+          <div className="absolute left-1/2 bottom-4 transform -translate-x-1/2 text-center pointer-events-none">
+            <p className="text-purple-300/50 text-xs italic">Merci Seigneur pour cette journee benie !</p>
+            <button className="mt-2 flex items-center gap-1 px-3 py-1 mx-auto rounded-full text-white text-xs font-medium shadow-lg hover:scale-105 transition-transform pointer-events-auto"
+              style={{ background: "linear-gradient(135deg, #059669, #14b8a6)" }}>
+              <span>🙏</span> Amen
+            </button>
           </div>
         </div>
       </div>
