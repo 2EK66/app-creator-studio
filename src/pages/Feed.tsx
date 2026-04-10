@@ -143,7 +143,7 @@ function UserProfileModal({ userId, name, initials, avatarUrl, onClose, onViewPh
     // Charger profil
     supabase
       .from("profiles")
-      .select("full_name, username, points_total, streak_days, role, quartier")
+      .select("full_name, username, points_total, streak_days, role, quartier, bio, cover_url")
       .eq("id", userId)
       .maybeSingle()
       .then(({ data }) => {
@@ -201,39 +201,50 @@ function UserProfileModal({ userId, name, initials, avatarUrl, onClose, onViewPh
           <div className="w-10 h-1 rounded-full bg-border" />
         </div>
 
-        {/* Header */}
-        <div className="flex items-center gap-4 px-5 py-4 border-b border-border/30">
-          {/* Photo — clic → voir en grand */}
-          <button
-            onClick={onViewPhoto}
-            className="flex-shrink-0 rounded-full overflow-hidden hover:scale-105 transition-all"
-            style={{ width: 64, height: 64 }}>
-            {avatarUrl
-              ? <img src={avatarUrl} alt={name} className="w-full h-full object-cover rounded-full border-2 border-primary/20" />
-              : <div className="w-full h-full rounded-full flex items-center justify-center border-2 border-primary/20" style={{ backgroundColor: "hsl(220 70% 35%)" }}>
-                  <span className="text-white font-bold text-xl">{initials}</span>
-                </div>
-            }
-          </button>
-
-          <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-base text-foreground truncate">{name}</h3>
-            {profile?.username && (
-              <p className="text-xs text-muted-foreground">@{profile.username}</p>
-            )}
-            {profile?.role && profile.role !== "membre" && (
-              <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                {profile.role === "pasteur" ? "⛪ Pasteur"
-                  : profile.role === "diacre" ? "🤝 Diacre"
-                  : profile.role === "admin" ? "🛡 Admin"
-                  : profile.role}
-              </span>
+        {/* Cover photo + avatar header */}
+        <div className="relative">
+          {/* Cover photo banner */}
+          <div className="w-full h-28 bg-gradient-to-br from-primary/30 via-primary/10 to-muted overflow-hidden rounded-t-none">
+            {profile?.cover_url && (
+              <img src={profile.cover_url} alt="Couverture" className="w-full h-full object-cover" />
             )}
           </div>
-
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-muted transition-colors flex-shrink-0">
-            <X className="w-4 h-4 text-muted-foreground" />
+          {/* Close button overlay */}
+          <button onClick={onClose} className="absolute top-2 right-2 p-1.5 rounded-full bg-black/30 hover:bg-black/50 transition-colors backdrop-blur-sm">
+            <X className="w-4 h-4 text-white" />
           </button>
+          {/* Avatar overlapping cover */}
+          <div className="px-5 -mt-8 flex items-end justify-between pb-3 border-b border-border/30">
+            <button onClick={onViewPhoto} className="rounded-full focus:outline-none ring-3 ring-card hover:scale-105 transition-all flex-shrink-0"
+              style={{ width: 64, height: 64 }}>
+              {avatarUrl
+                ? <img src={avatarUrl} alt={name} className="w-full h-full object-cover rounded-full border-3 border-card" style={{ borderWidth: 3, borderColor: "var(--card)" }} />
+                : <div className="w-full h-full rounded-full flex items-center justify-center border-[3px] border-card" style={{ backgroundColor: "hsl(220 70% 35%)" }}>
+                    <span className="text-white font-bold text-xl">{initials}</span>
+                  </div>
+              }
+            </button>
+            <div className="flex-1 min-w-0 ml-3 pt-8">
+              <h3 className="font-bold text-base text-foreground truncate leading-tight">{name}</h3>
+              {profile?.username && (
+                <p className="text-xs text-muted-foreground">@{profile.username}</p>
+              )}
+              {profile?.role && profile.role !== "membre" && (
+                <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                  {profile.role === "pasteur" ? "⛪ Pasteur"
+                    : profile.role === "diacre" ? "🤝 Diacre"
+                    : profile.role === "admin" ? "🛡 Admin"
+                    : profile.role}
+                </span>
+              )}
+            </div>
+          </div>
+          {/* Bio */}
+          {profile?.bio && (
+            <div className="px-5 py-2.5 border-b border-border/30">
+              <p className="text-sm text-foreground/80 leading-snug">{profile.bio}</p>
+            </div>
+          )}
         </div>
 
         {loadingProfile ? (

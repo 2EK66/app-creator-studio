@@ -6,7 +6,7 @@ import { MirecAvatar } from "@/components/mirec/Avatar";
 import {
   Moon, Sun, Download, LogOut, ChevronRight,
   Edit3, Check, X, FileText, Award, BarChart2,
-  Briefcase, Plus, Trash2, Star, Camera
+  Briefcase, Plus, Trash2, Star, Camera, ImageIcon
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
@@ -289,20 +289,27 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState<"posts" | "competences" | "badges" | "points">("posts");
   const [loadingPosts, setLoadingPosts] = useState(true);
   
+  const [bio, setBio]                     = useState("");
+  const [coverUrl, setCoverUrl]           = useState<string | null>(null);
+
   // États pour l'upload d'avatar
   const [uploading, setUploading]         = useState(false);
   const [viewingAvatar, setViewingAvatar] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const fileInputRef  = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("full_name, username, avatar_url, points_total").eq("id", user.id).single()
+    supabase.from("profiles").select("full_name, username, avatar_url, points_total, bio, cover_url").eq("id", user.id).single()
       .then(({ data }) => {
         if (data) {
           setFullName(data.full_name || "");
           setUsername(data.username || "");
           setAvatarUrl(data.avatar_url || null);
           setPoints(data.points_total || 0);
+          setBio((data as any).bio || "");
+          setCoverUrl((data as any).cover_url || null);
         }
       });
   }, [user]);
@@ -353,9 +360,28 @@ export default function Profile() {
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
-    await supabase.from("profiles").update({ full_name: fullName, username }).eq("id", user.id);
+    await supabase.from("profiles").update({ full_name: fullName, username, bio } as any).eq("id", user.id);
     setSaving(false);
     setEditing(false);
+  };
+
+  const uploadCover = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setCoverUploading(true);
+      if (!event.target.files || event.target.files.length === 0) return;
+      const file    = event.target.files[0];
+      const fileExt = file.name.split(".").pop();
+      const filePath = `cover-${user?.id}-${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from("covers").upload(filePath, file);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("covers").getPublicUrl(filePath);
+      await supabase.from("profiles").update({ cover_url: urlData.publicUrl } as any).eq("id", user?.id);
+      setCoverUrl(urlData.publicUrl);
+    } catch (error) {
+      console.error("Erreur upload cover:", error);
+    } finally {
+      setCoverUploading(false);
+    }
   };
 
   const handleSignOut = async () => { await signOut(); navigate("/auth"); };
@@ -406,92 +432,94 @@ export default function Profile() {
     post_verse: "📖 Verset partagé", post_post: "📝 Post publié", group_message: "👥 Message de groupe",
   };
 
+  const totalReactions = posts.reduce((sum, p) => sum + (p.reactions.amen + p.reactions.feu + p.reactions.coeur), 0);
+
   return (
-    <div className="max-w-lg mx-auto pb-28 px-4 pt-6">
-      {/* HEADER avec avatar */}
-      <div className="flex flex-col items-center mb-6">
-        {/* Visionneuse plein écran pour son propre avatar */}
-        {viewingAvatar && (
-          <div
-            className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center"
-            onClick={() => setViewingAvatar(false)}
-          >
-            <button
-              onClick={() => setViewingAvatar(false)}
-              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-            >
-              <X className="w-5 h-5 text-white" />
-            </button>
-            <p className="text-white font-semibold text-base mb-4 opacity-90">{fullName || "Profil"}</p>
-            <div
-              className="rounded-full overflow-hidden border-4 border-white/20 shadow-2xl"
-              style={{ width: 240, height: 240 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {avatarUrl
-                ? <img src={avatarUrl} alt="Profil" className="w-full h-full object-cover" />
-                : <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: "hsl(220 70% 35%)" }}>
-                    <span className="text-white font-bold" style={{ fontSize: 72 }}>
-                      {(fullName || user.email || "U").slice(0, 2).toUpperCase()}
-                    </span>
-                  </div>
-              }
-            </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); setViewingAvatar(false); fileInputRef.current?.click(); }}
-              className="mt-6 flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-colors"
-            >
-              <Camera className="w-4 h-4" /> Changer la photo
-            </button>
-            <p className="text-white/40 text-xs mt-4">Appuie n'importe où pour fermer</p>
+    <div className="max-w-lg mx-auto pb-28">
+      {/* ─── VISIONNEUSE AVATAR PLEIN ÉCRAN ─── */}
+      {viewingAvatar && (
+        <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center" onClick={() => setViewingAvatar(false)}>
+          <button onClick={() => setViewingAvatar(false)} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+            <X className="w-5 h-5 text-white" />
+          </button>
+          <p className="text-white font-semibold text-base mb-4 opacity-90">{fullName || "Profil"}</p>
+          <div className="rounded-full overflow-hidden border-4 border-white/20 shadow-2xl" style={{ width: 240, height: 240 }} onClick={e => e.stopPropagation()}>
+            {avatarUrl
+              ? <img src={avatarUrl} alt="Profil" className="w-full h-full object-cover" />
+              : <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: "hsl(220 70% 35%)" }}>
+                  <span className="text-white font-bold" style={{ fontSize: 72 }}>{(fullName || user.email || "U").slice(0, 2).toUpperCase()}</span>
+                </div>
+            }
+          </div>
+          <button onClick={e => { e.stopPropagation(); setViewingAvatar(false); fileInputRef.current?.click(); }}
+            className="mt-6 flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-colors">
+            <Camera className="w-4 h-4" /> Changer la photo
+          </button>
+          <p className="text-white/40 text-xs mt-4">Appuie n'importe où pour fermer</p>
+        </div>
+      )}
+
+      {/* ─── COVER PHOTO ─── */}
+      <div className="relative w-full h-44 bg-gradient-to-br from-primary/30 via-primary/10 to-background overflow-hidden">
+        {coverUrl && <img src={coverUrl} alt="Couverture" className="w-full h-full object-cover" />}
+        {coverUploading && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
           </div>
         )}
+        {/* Dégradé bas pour lisibilité */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background/60 to-transparent" />
+        {/* Bouton changer la couverture */}
+        <button onClick={() => coverInputRef.current?.click()} disabled={coverUploading}
+          className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/40 hover:bg-black/60 text-white text-xs font-medium transition-colors backdrop-blur-sm">
+          <ImageIcon className="w-3.5 h-3.5" /> Couverture
+        </button>
+      </div>
 
-        <div className="relative">
-          {/* Clic sur avatar = voir en grand */}
-          <button
-            onClick={() => setViewingAvatar(true)}
-            className="rounded-full focus:outline-none"
-          >
-            <MirecAvatar
-              initials={(fullName || user.email || "U").slice(0, 2).toUpperCase()}
-              color="hsl(220 70% 35%)"
-              size={80}
-              url={avatarUrl}
-            />
-            {uploading && (
-              <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-          </button>
-
-          {/* Bouton caméra pour changer la photo */}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md border-2 border-card hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            <Camera className="w-3.5 h-3.5" />
-          </button>
+      {/* ─── AVATAR + NOM + BIO ─── */}
+      <div className="px-4">
+        <div className="flex items-end justify-between -mt-11 mb-3">
+          {/* Avatar chevauchant la couverture */}
+          <div className="relative">
+            <button onClick={() => setViewingAvatar(true)} className="rounded-full focus:outline-none ring-4 ring-background block">
+              <MirecAvatar
+                initials={(fullName || user.email || "U").slice(0, 2).toUpperCase()}
+                color="hsl(220 70% 35%)"
+                size={84}
+                url={avatarUrl}
+              />
+              {uploading && (
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+            </button>
+            <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+              className="absolute bottom-0.5 right-0.5 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md border-2 border-background hover:bg-primary/90 transition-colors disabled:opacity-50">
+              <Camera className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          {/* Bouton modifier */}
+          {!editing && (
+            <button onClick={() => setEditing(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-border bg-background text-xs font-semibold text-foreground hover:bg-muted transition-colors mb-1">
+              <Edit3 className="w-3.5 h-3.5" /> Modifier
+            </button>
+          )}
         </div>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={uploadAvatar}
-          style={{ display: 'none' }}
-        />
-
+        {/* Nom + bio */}
         {!editing ? (
-          <>
-            <h2 className="font-bold text-xl text-foreground mt-3">{fullName || "Utilisateur"}</h2>
+          <div className="mb-5">
+            <h2 className="font-bold text-xl text-foreground leading-tight">{fullName || "Utilisateur"}</h2>
             {username && <p className="text-sm text-muted-foreground">@{username}</p>}
-            <p className="text-xs text-muted-foreground mt-1">{user.email}</p>
-          </>
+            {bio
+              ? <p className="text-sm text-foreground/80 mt-1.5 leading-snug">{bio}</p>
+              : <p className="text-sm text-muted-foreground/50 mt-1.5 italic">Ajoute une bio…</p>
+            }
+          </div>
         ) : (
-          <div className="w-full mt-4 space-y-3">
+          <div className="mb-5 space-y-3 bg-card border border-border/50 rounded-2xl p-4 shadow-sm">
             <div>
               <label className="text-xs font-semibold text-foreground mb-1 block">Nom complet</label>
               <input value={fullName} onChange={e => setFullName(e.target.value)}
@@ -502,10 +530,17 @@ export default function Profile() {
               <input value={username} onChange={e => setUsername(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
+            <div>
+              <label className="text-xs font-semibold text-foreground mb-1 block">Bio <span className="text-muted-foreground font-normal">({bio.length}/160)</span></label>
+              <textarea value={bio} onChange={e => setBio(e.target.value.slice(0, 160))}
+                placeholder="Qui es-tu ? Quel est ton ministère ?"
+                rows={3}
+                className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
+            </div>
             <div className="flex gap-2">
               <button onClick={handleSave} disabled={saving}
                 className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-1">
-                <Check className="w-4 h-4" /> {saving ? "..." : "Enregistrer"}
+                <Check className="w-4 h-4" /> {saving ? "…" : "Enregistrer"}
               </button>
               <button onClick={() => setEditing(false)} className="px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground">
                 <X className="w-4 h-4" />
@@ -515,16 +550,26 @@ export default function Profile() {
         )}
       </div>
 
+      {/* Inputs cachés */}
+      <input ref={fileInputRef}  type="file" accept="image/*" onChange={uploadAvatar} className="hidden" />
+      <input ref={coverInputRef} type="file" accept="image/*" onChange={uploadCover}  className="hidden" />
+
       {/* STATS */}
-      <div className="grid grid-cols-3 gap-2 mb-5">
-        {[{ val: posts.length, label: "Posts" }, { val: points, label: "Points" }, { val: badges.length, label: "Badges" }].map((s, i) => (
+      <div className="grid grid-cols-4 gap-2 mb-5 px-4">
+        {[
+          { val: posts.length,    label: "Posts"     },
+          { val: points,          label: "Points"    },
+          { val: badges.length,   label: "Badges"    },
+          { val: totalReactions,  label: "Réactions" },
+        ].map((s, i) => (
           <div key={i} className="bg-card border border-border/50 rounded-xl p-3 text-center shadow-sm">
-            <div className="text-lg font-bold text-foreground">{s.val}</div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">{s.label}</div>
+            <div className="text-base font-bold text-foreground">{s.val}</div>
+            <div className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{s.label}</div>
           </div>
         ))}
       </div>
 
+      <div className="px-4">
       {/* NIVEAU SPIRITUEL */}
       <div className="bg-card border border-border/50 rounded-2xl p-4 mb-5 shadow-sm">
         <div className="flex items-center gap-3 mb-3">
@@ -646,7 +691,6 @@ export default function Profile() {
 
       {/* PARAMÈTRES */}
       <div className="bg-card rounded-2xl overflow-hidden shadow-sm border border-border/50">
-        {!editing && <SettingsRow icon={<Edit3 className="w-4 h-4" />} label="Modifier le profil" onClick={() => setEditing(true)} />}
         <div className="flex items-center justify-between px-4 py-3.5 border-b border-border/30">
           <div className="flex items-center gap-3">
             {dark ? <Moon className="w-4 h-4 text-primary" /> : <Sun className="w-4 h-4 text-primary" />}
@@ -673,7 +717,9 @@ export default function Profile() {
         </button>
       </div>
 
-      <p className="text-center text-[10px] text-muted-foreground mt-8">MIREC v1.0 · Communauté de foi</p>
+      </div>
+
+      <p className="text-center text-[10px] text-muted-foreground mt-8 px-4">MIREC v1.0 · Communauté de foi</p>
     </div>
   );
 }
