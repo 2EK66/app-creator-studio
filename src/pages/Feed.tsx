@@ -454,17 +454,18 @@ export default function Feed({ onTabChange }: FeedProps) {
     }}>
 
       {/* ========== ÉTOILES ========== */}
-      {Array.from({ length: 20 }, (_, i) => (
+      {Array.from({ length: 80 }, (_, i) => (
         <div key={i} className="absolute rounded-full pointer-events-none"
           style={{
-            width: Math.random() * 3 + 1,
-            height: Math.random() * 3 + 1,
+            width: Math.random() * 4 + 1,
+            height: Math.random() * 4 + 1,
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
-            background: "#fff",
-            animation: `shimmer ${2 + Math.random() * 3}s ease-in-out infinite`,
-            animationDelay: `${Math.random() * 3}s`,
-            opacity: 0.4,
+            background: i % 10 === 0 ? "rgba(200,180,255,1)" : "#fff",
+            boxShadow: i % 15 === 0 ? "0 0 4px 2px rgba(180,160,255,0.6)" : "none",
+            animation: `shimmer ${2 + Math.random() * 4}s ease-in-out infinite`,
+            animationDelay: `${Math.random() * 4}s`,
+            opacity: 0.3 + Math.random() * 0.6,
           }}
         />
       ))}
