@@ -6,6 +6,7 @@ import { FeedCommentSection } from "@/components/mirec/FeedCommentSection";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import Podcast from "@/pages/Podcast";
 
 // ============================================================
 // TYPES POUR LES FLASH (table dédiée)
@@ -445,7 +446,7 @@ export default function Feed({ onTabChange }: FeedProps) {
   };
 
   const sizes: Array<"sm" | "md" | "lg"> = ["md", "lg", "md", "sm", "md", "lg", "sm", "md"];
-  const filters = [{ key: "all", label: "Tout" }, { key: "announcement", label: "📢 Annonces" }, { key: "testimony", label: "✨ Témoignages" }, { key: "prayer", label: "🙏 Prières" }, { key: "verse", label: "📖 Versets" }];
+  const filters = [{ key: "all", label: "Tout" }, { key: "announcement", label: "📢 Annonces" }, { key: "testimony", label: "✨ Témoignages" }, { key: "prayer", label: "🙏 Prières" }, { key: "podcast", label: "🎙️ Podcasts" }];
   const filteredPosts = filter === "all" ? posts : posts.filter(p => p.type === filter);
 
   return (
@@ -499,14 +500,18 @@ export default function Feed({ onTabChange }: FeedProps) {
       </div>
 
       {/* FILTRES DU FEED (posts classiques) */}
-      <div className="sticky top-[61px] z-20 border-b border-border/20 px-4 py-2.5" style={{ background: "rgba(var(--background-rgb,255,255,255),0.9)", backdropFilter: "blur(12px)" }}>
-        <div className="max-w-lg mx-auto flex gap-2 overflow-x-auto no-scrollbar">{filters.map(f => (<button key={f.key} onClick={() => setFilter(f.key)} className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${filter === f.key ? "text-white shadow-sm" : "bg-muted/60 text-muted-foreground hover:bg-muted"}`} style={filter === f.key ? { background: "linear-gradient(135deg, #1A4B9B, #7C3AED)", boxShadow: "0 2px 8px rgba(26,75,155,0.35)" } : {}}>{f.label}</button>))}</div>
+      <div className="sticky top-[61px] z-20 border-b px-4 py-2.5" style={{ background: "rgba(13,8,32,0.85)", backdropFilter: "blur(16px)", borderColor: "rgba(139,92,246,0.15)" }}>
+        <div className="max-w-lg mx-auto flex gap-2 overflow-x-auto no-scrollbar">{filters.map(f => (<button key={f.key} onClick={() => setFilter(f.key)} className="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all" style={filter === f.key ? { background: "linear-gradient(135deg, #1A4B9B, #7C3AED)", color: "#fff", boxShadow: "0 2px 8px rgba(26,75,155,0.35)" } : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.08)" }}>{f.label}</button>))}</div>
       </div>
+
+      {/* PAGE PODCAST EN LIGNE */}
+      {filter === "podcast" && <Podcast />}
 
       {/* LISTE DES POSTS CLASSIQUES */}
       <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
-        {loadingPosts ? <div className="flex flex-col items-center justify-center py-16 gap-3"><div className="w-10 h-10 rounded-full border-3 border-primary border-t-transparent animate-spin" style={{ borderWidth: 3 }} /><p className="text-xs text-muted-foreground">Chargement du fil...</p></div>
-        : filteredPosts.length === 0 ? <div className="flex flex-col items-center py-16 text-center gap-3"><div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center"><Sparkles className="w-8 h-8 text-muted-foreground/40" /></div><p className="font-semibold text-foreground">Aucun post ici</p><p className="text-sm text-muted-foreground">Sois le premier à partager quelque chose !</p></div>
+        {filter === "podcast" ? null
+        : loadingPosts ? <div className="flex flex-col items-center justify-center py-16 gap-3"><div className="w-10 h-10 rounded-full border-3 border-primary border-t-transparent animate-spin" style={{ borderWidth: 3 }} /><p className="text-xs text-white/50">Chargement du fil...</p></div>
+        : filteredPosts.length === 0 ? <div className="flex flex-col items-center py-16 text-center gap-3"><div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.08)" }}><Sparkles className="w-8 h-8 text-white/30" /></div><p className="font-semibold text-white">Aucun post ici</p><p className="text-sm text-white/50">Sois le premier à partager quelque chose !</p></div>
         : filteredPosts.map(post => {
           const tc = typeConfig(post.type);
           const isAuthor = user?.id === post.author_id;
