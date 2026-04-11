@@ -449,16 +449,13 @@ export default function Feed({ onTabChange }: FeedProps) {
   const filteredPosts = filter === "all" ? posts : posts.filter(p => p.type === filter);
 
   return (
-    <div className="min-h-screen bg-background pb-20 relative overflow-hidden">
+    <div className="min-h-screen pb-20 relative overflow-hidden" style={{
+      background: "radial-gradient(ellipse at 20% 15%, rgba(88,28,220,0.75) 0%, transparent 45%), radial-gradient(ellipse at 80% 80%, rgba(109,40,217,0.65) 0%, transparent 50%), radial-gradient(ellipse at 60% 40%, rgba(139,92,246,0.45) 0%, transparent 40%), radial-gradient(ellipse at 30% 70%, rgba(55,14,140,0.6) 0%, transparent 45%), #0d0820",
+    }}>
 
-      {/* ========== ARRIÈRE-PLAN VOIE LACTÉE + ÉTOILES ========== */}
-      <div className="fixed inset-0 -z-10 pointer-events-none" style={{
-        background: "radial-gradient(ellipse at 20% 20%, rgba(26,75,155,0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.1) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(217,119,6,0.06) 0%, transparent 60%), var(--background)",
-        animation: "bg-shift 12s ease-in-out infinite",
-      }} />
-
+      {/* ========== ÉTOILES ========== */}
       {Array.from({ length: 20 }, (_, i) => (
-        <div key={i} className="fixed rounded-full pointer-events-none -z-10"
+        <div key={i} className="absolute rounded-full pointer-events-none"
           style={{
             width: Math.random() * 3 + 1,
             height: Math.random() * 3 + 1,
@@ -467,7 +464,7 @@ export default function Feed({ onTabChange }: FeedProps) {
             background: "#fff",
             animation: `shimmer ${2 + Math.random() * 3}s ease-in-out infinite`,
             animationDelay: `${Math.random() * 3}s`,
-            opacity: 0.3,
+            opacity: 0.4,
           }}
         />
       ))}
