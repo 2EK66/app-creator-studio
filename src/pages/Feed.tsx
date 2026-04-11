@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { NewPostModal } from "@/components/mirec/NewPostModal";
 import { MirecLogo } from "@/components/mirec/MirecLogo";
-import { Plus, Bell, RefreshCw, MoreVertical, Pencil, Trash2, X, Check, Sparkles, Radio, Music, BookOpen, Mic, Send } from "lucide-react";
+import { Plus, Bell, RefreshCw, MoreVertical, Pencil, Trash2, X, Check, Sparkles, Send } from "lucide-react";
 import { FeedCommentSection } from "@/components/mirec/FeedCommentSection";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
 // ============================================================
-// TYPES POUR LES FLASH (témoignages 24h)
+// TYPES POUR LES FLASH (table dédiée)
 // ============================================================
 interface Flash {
   id: string;
@@ -16,14 +16,14 @@ interface Flash {
   author_name: string;
   author_avatar: string | null;
   content: string;
-  type: "text" | "audio" | "verse";
+  type: "text" | "verse"; // pas d'audio pour l'instant
   created_at: string;
   amen_count: number;
   my_amen: boolean;
 }
 
 // ============================================================
-// TYPES POUR LE FEED CLASSIQUE
+// TYPES POUR LE FEED CLASSIQUE (posts)
 // ============================================================
 interface FeedPost {
   id: string;
@@ -110,7 +110,6 @@ function FlashBubble({ flash, size = "md", delay = 0, onOpen, onAmen }: {
   const initials = safeName.slice(0, 2).toUpperCase();
   const typeColors: Record<string, { from: string; to: string; glow: string }> = {
     text:  { from: "#1A4B9B", to: "#7C3AED", glow: "rgba(124,58,237,0.5)" },
-    audio: { from: "#059669", to: "#0ea5e9", glow: "rgba(14,165,233,0.5)" },
     verse: { from: "#D97706", to: "#f59e0b", glow: "rgba(245,158,11,0.5)" },
   };
   const colors = typeColors[flash.type] || typeColors.text;
@@ -138,11 +137,11 @@ function FlashBubble({ flash, size = "md", delay = 0, onOpen, onAmen }: {
                 </div>}
           </div>
           <p className="text-[9px] font-semibold text-center truncate w-full px-1" style={{ color: colors.from }}>{safeName.split(" ")[0]}</p>
-          <span className="text-[8px]">{flash.type === "audio" ? "🎤" : flash.type === "verse" ? "📖" : "✨"}</span>
+          <span className="text-[8px]">{flash.type === "verse" ? "📖" : "✨"}</span>
         </div>
       </div>
       <p className="text-[9px] text-muted-foreground text-center line-clamp-2 leading-tight px-1 w-full">
-        {flash.type === "audio" ? "Témoignage vocal" : flash.content.slice(0, 40) + (flash.content.length > 40 ? "…" : "")}
+        {flash.content.slice(0, 40) + (flash.content.length > 40 ? "…" : "")}
       </p>
       <button onClick={(e) => { e.stopPropagation(); onAmen(flash.id, e); }}
         className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-semibold transition-all active:scale-90"
@@ -159,7 +158,6 @@ function FlashBubble({ flash, size = "md", delay = 0, onOpen, onAmen }: {
 function FlashDetail({ flash, onClose, onAmen }: { flash: Flash; onClose: () => void; onAmen: (id: string, e: React.MouseEvent) => void; }) {
   const typeColors: Record<string, { from: string; to: string }> = {
     text:  { from: "#1A4B9B", to: "#7C3AED" },
-    audio: { from: "#059669", to: "#0ea5e9" },
     verse: { from: "#D97706", to: "#f59e0b" },
   };
   const colors = typeColors[flash.type] || typeColors.text;
@@ -180,15 +178,11 @@ function FlashDetail({ flash, onClose, onAmen }: { flash: Flash; onClose: () => 
                 </div>}
           </div>
           <div><p className="font-bold text-sm text-white">{flash.author_name}</p>
-            <div className="flex items-center gap-2"><span className="text-[10px] text-white/60">{flash.type === "text" ? "✨ Témoignage" : flash.type === "audio" ? "🎤 Vocal" : "📖 Verset"}</span><span className="text-[10px] text-white/40">· {timeLeft(flash.created_at)}</span></div>
+            <div className="flex items-center gap-2"><span className="text-[10px] text-white/60">{flash.type === "text" ? "✨ Témoignage Flash" : "📖 Verset Flash"}</span><span className="text-[10px] text-white/40">· {timeLeft(flash.created_at)}</span></div>
           </div>
         </div>
         <div className="px-5 pb-4">
-          {flash.type === "audio" ? (
-            <div className="bg-white/10 rounded-2xl p-4 flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${colors.from}, ${colors.to})` }}><Mic className="w-5 h-5 text-white" /></div><div><p className="text-sm text-white font-medium">Témoignage vocal</p><p className="text-[11px] text-white/50">Appuie pour écouter</p></div></div>
-          ) : (
-            <div className="bg-white/8 rounded-2xl p-4"><p className="text-sm text-white leading-relaxed">{flash.content}</p></div>
-          )}
+          <div className="bg-white/8 rounded-2xl p-4"><p className="text-sm text-white leading-relaxed">{flash.content}</p></div>
         </div>
         <div className="px-5 pb-5 flex flex-col items-center gap-2">
           <button onClick={(e) => onAmen(flash.id, e)} className="flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold text-sm transition-all active:scale-95"
@@ -207,7 +201,7 @@ function NewFlashModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
   const handleSubmit = async () => { if (!content.trim()) return; setSaving(true); await onSubmit({ content: content.trim(), type }); setSaving(false); onClose(); };
-  const typeConfig = { text: { label: "Témoignage", emoji: "✨", placeholder: "Partage une victoire... (max 24h)" }, verse: { label: "Verset Flash", emoji: "📖", placeholder: "Un verset qui t'a touché..." } };
+  const typeConfig = { text: { label: "Témoignage Flash", emoji: "✨", placeholder: "Partage une victoire... (disparaît dans 24h)" }, verse: { label: "Verset Flash", emoji: "📖", placeholder: "Un verset qui t'a touché aujourd'hui..." } };
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }} onClick={onClose}>
       <div className="bg-card w-full max-w-lg rounded-t-3xl p-5 space-y-4" style={{ maxHeight: "80vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
@@ -287,7 +281,7 @@ function UserProfileModal({ userId, name, initials, avatarUrl, onClose, onViewPh
 }
 
 // ============================================================
-// TYPE CONFIG POUR LES POSTS
+// TYPE CONFIG POUR LES POSTS CLASSIQUES
 // ============================================================
 function typeConfig(type: string) {
   const map: Record<string, { label: string; color: string; bg: string; border: string; gradient: string }> = {
@@ -305,14 +299,14 @@ function typeConfig(type: string) {
 export default function Feed({ onTabChange }: FeedProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  // États pour les flashes
+  // États pour les FLASH (table dédiée)
   const [flashes, setFlashes] = useState<Flash[]>([]);
   const [loadingFlashes, setLoadingFlashes] = useState(true);
   const [selectedFlash, setSelectedFlash] = useState<Flash | null>(null);
   const [showNewFlash, setShowNewFlash] = useState(false);
   const [particles, setParticles] = useState<{ id: number; x: number; y: number }[]>([]);
   const particleId = useRef(0);
-  // États pour le feed classique
+  // États pour le feed classique (posts)
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -324,65 +318,67 @@ export default function Feed({ onTabChange }: FeedProps) {
   const [photoModal, setPhotoModal] = useState<{ url: string | null; name: string; initials: string } | null>(null);
   const [profileModal, setProfileModal] = useState<{ userId: string; name: string; initials: string; avatar: string | null } | null>(null);
 
-  // ========== FLASH LOGIC ==========
+  // ========== FLASH LOGIC (table flashes) ==========
   const fetchFlashes = useCallback(async () => {
     setLoadingFlashes(true);
     try {
       const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-      const { data: postsData, error } = await supabase
-        .from("posts")
+      const { data: flashesData, error } = await supabase
+        .from("flashes")
         .select("id, content, type, created_at, author_id")
-        .in("type", ["testimony", "verse", "flash"])
         .gte("created_at", since)
         .order("created_at", { ascending: false })
         .limit(20);
       if (error) throw error;
-      if (!postsData || postsData.length === 0) { setFlashes([]); setLoadingFlashes(false); return; }
-      const authorIds = [...new Set(postsData.map(p => p.author_id))];
+      if (!flashesData || flashesData.length === 0) { setFlashes([]); setLoadingFlashes(false); return; }
+      const authorIds = [...new Set(flashesData.map(f => f.author_id))];
       const { data: profiles } = await supabase.from("profiles").select("id, full_name, avatar_url").in("id", authorIds);
       const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, { name: p.full_name || "Membre", avatar: getAvatarUrl(p.avatar_url) }]));
-      const postIds = postsData.map(p => p.id);
-      const { data: reactions } = await supabase.from("reactions").select("content_id, author_id, type").in("content_id", postIds).eq("type", "amen");
-      const enriched: Flash[] = postsData.map(post => {
-        const prof = profileMap[post.author_id] || { name: "Membre", avatar: null };
-        const amens = reactions?.filter(r => r.content_id === post.id) || [];
+      const flashIds = flashesData.map(f => f.id);
+      const { data: amens } = await supabase.from("flash_amens").select("flash_id, user_id").in("flash_id", flashIds);
+      const enriched: Flash[] = flashesData.map(flash => {
+        const prof = profileMap[flash.author_id] || { name: "Membre", avatar: null };
+        const amenList = amens?.filter(a => a.flash_id === flash.id) || [];
         return {
-          id: post.id,
-          author_id: post.author_id,
+          id: flash.id,
+          author_id: flash.author_id,
           author_name: prof.name,
           author_avatar: prof.avatar,
-          content: post.content,
-          type: (post.type === "verse" ? "verse" : "text") as "text" | "audio" | "verse",
-          created_at: post.created_at,
-          amen_count: amens.length,
-          my_amen: amens.some(r => r.author_id === user?.id),
+          content: flash.content,
+          type: flash.type as "text" | "verse",
+          created_at: flash.created_at,
+          amen_count: amenList.length,
+          my_amen: amenList.some(a => a.user_id === user?.id),
         };
       });
       setFlashes(enriched);
     } catch (err) { console.error(err); } finally { setLoadingFlashes(false); }
   }, [user]);
 
-  const handleAmen = async (postId: string, e: React.MouseEvent) => {
+  const handleAmen = async (flashId: string, e: React.MouseEvent) => {
     if (!user) { navigate("/auth"); return; }
     const rect = (e.target as HTMLElement).getBoundingClientRect();
     const pid = particleId.current++;
     setParticles(prev => [...prev, { id: pid, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }]);
-    const flash = flashes.find(f => f.id === postId);
+    const flash = flashes.find(f => f.id === flashId);
     if (!flash) return;
     const wasAmen = flash.my_amen;
-    setFlashes(prev => prev.map(f => f.id === postId ? { ...f, my_amen: !wasAmen, amen_count: f.amen_count + (wasAmen ? -1 : 1) } : f));
-    if (selectedFlash?.id === postId) setSelectedFlash(prev => prev ? { ...prev, my_amen: !wasAmen, amen_count: prev.amen_count + (wasAmen ? -1 : 1) } : null);
-    if (wasAmen) await supabase.from("reactions").delete().eq("content_id", postId).eq("author_id", user.id).eq("type", "amen");
-    else await supabase.from("reactions").insert({ content_id: postId, author_id: user.id, type: "amen" });
+    setFlashes(prev => prev.map(f => f.id === flashId ? { ...f, my_amen: !wasAmen, amen_count: f.amen_count + (wasAmen ? -1 : 1) } : f));
+    if (selectedFlash?.id === flashId) setSelectedFlash(prev => prev ? { ...prev, my_amen: !wasAmen, amen_count: prev.amen_count + (wasAmen ? -1 : 1) } : null);
+    if (wasAmen) {
+      await supabase.from("flash_amens").delete().eq("flash_id", flashId).eq("user_id", user.id);
+    } else {
+      await supabase.from("flash_amens").insert({ flash_id: flashId, user_id: user.id });
+    }
   };
 
   const handleNewFlash = async (data: { content: string; type: "text" | "verse" }) => {
     if (!user) return;
-    await supabase.from("posts").insert({ content: data.content, type: data.type === "verse" ? "verse" : "testimony", author_id: user.id });
+    await supabase.from("flashes").insert({ content: data.content, type: data.type, author_id: user.id });
     fetchFlashes();
   };
 
-  // ========== FEED POSTS LOGIC ==========
+  // ========== FEED POSTS LOGIC (table posts) ==========
   const fetchPosts = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoadingPosts(true);
     let result = await supabase.from("posts").select("id, content, type, created_at, author_id, image_url").order("created_at", { ascending: false }).limit(50);
@@ -493,7 +489,7 @@ export default function Feed({ onTabChange }: FeedProps) {
         </div>
       </header>
 
-      {/* SECTION FLASH (BULLES) */}
+      {/* SECTION FLASH (table flashes) */}
       <div className="max-w-lg mx-auto px-4 pt-6 pb-2">
         <div className="flex items-center gap-2 mb-4"><span className="text-sm font-bold text-foreground">✨ Témoignages Flash (24h)</span><div className="flex-1 h-px bg-gradient-to-r from-primary/30 to-transparent" /></div>
         {loadingFlashes ? <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
@@ -504,7 +500,7 @@ export default function Feed({ onTabChange }: FeedProps) {
         </div>}
       </div>
 
-      {/* FILTRES DU FEED */}
+      {/* FILTRES DU FEED (posts classiques) */}
       <div className="sticky top-[61px] z-20 border-b border-border/20 px-4 py-2.5" style={{ background: "rgba(var(--background-rgb,255,255,255),0.9)", backdropFilter: "blur(12px)" }}>
         <div className="max-w-lg mx-auto flex gap-2 overflow-x-auto no-scrollbar">{filters.map(f => (<button key={f.key} onClick={() => setFilter(f.key)} className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${filter === f.key ? "text-white shadow-sm" : "bg-muted/60 text-muted-foreground hover:bg-muted"}`} style={filter === f.key ? { background: "linear-gradient(135deg, #1A4B9B, #7C3AED)", boxShadow: "0 2px 8px rgba(26,75,155,0.35)" } : {}}>{f.label}</button>))}</div>
       </div>
