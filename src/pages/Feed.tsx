@@ -512,7 +512,7 @@ export default function Feed({ onTabChange }: FeedProps) {
           const isAuthor = user?.id === post.author_id;
           const isEditing = editingPost === post.id;
           return (
-            <div key={post.id} className="rounded-2xl overflow-hidden transition-all hover:shadow-md" style={{ background: "var(--card)", border: `1px solid ${tc.border}`, boxShadow: `0 2px 12px rgba(0,0,0,0.05)` }}>
+            <div key={post.id} className="rounded-2xl overflow-hidden transition-all hover:shadow-md" style={{ background: "rgba(10,6,30,0.72)", backdropFilter: "blur(12px)", border: `1px solid rgba(139,92,246,0.25)`, boxShadow: `0 4px 24px rgba(0,0,0,0.4)` }}>
               <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${tc.color}, ${tc.color}88)` }} />
               <div className="p-4">
                 <div className="flex items-center gap-3 mb-3">
