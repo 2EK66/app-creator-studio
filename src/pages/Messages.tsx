@@ -10,7 +10,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 // ============================================================
-// TYPES — inchangés
+// TYPES
 // ============================================================
 interface Conversation {
   partner_id: string;
@@ -43,7 +43,7 @@ interface MessagesProps {
 }
 
 // ============================================================
-// MODAL PHOTO — inchangée
+// MODAL PHOTO
 // ============================================================
 function PhotoModal({ avatarUrl, name, initials, onClose }: {
   avatarUrl: string | null; name: string; initials: string; onClose: () => void;
@@ -74,7 +74,7 @@ function PhotoModal({ avatarUrl, name, initials, onClose }: {
 }
 
 // ============================================================
-// MODAL APERÇU PIÈCE JOINTE — inchangée
+// MODAL APERÇU PIÈCE JOINTE
 // ============================================================
 function AttachmentPreviewModal({ url, onClose }: { url: string; onClose: () => void }) {
   useEffect(() => {
@@ -96,7 +96,6 @@ function AttachmentPreviewModal({ url, onClose }: { url: string; onClose: () => 
 
 // ============================================================
 // INDICATEUR "EN TRAIN D'ÉCRIRE..."
-// — 3 points qui pulsent, style WhatsApp
 // ============================================================
 function TypingIndicator({ name }: { name: string }) {
   return (
@@ -148,10 +147,10 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
   const [photoModal, setPhotoModal]         = useState<{ url: string | null; name: string; initials: string } | null>(null);
   const [previewAttachment, setPreviewAttachment] = useState<string | null>(null);
   const [partnerOnline, setPartnerOnline]   = useState(false);
-  const [partnerTyping, setPartnerTyping]   = useState(false);  // ← NOUVEAU
-  const [activeTab, setActiveTab]           = useState<"messages" | "contacts">("messages"); // ← NOUVEAU
-  const [allMembers, setAllMembers]         = useState<any[]>([]); // ← NOUVEAU
-  const [loadingMembers, setLoadingMembers] = useState(false);     // ← NOUVEAU
+  const [partnerTyping, setPartnerTyping]   = useState(false);
+  const [activeTab, setActiveTab]           = useState<"messages" | "contacts">("messages");
+  const [allMembers, setAllMembers]         = useState<any[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
 
   // ---- Utilitaire avatar ----
   const getAvatarUrl = (path: string | null): string | null => {
@@ -160,65 +159,62 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
     return supabase.storage.from("avatars").getPublicUrl(path).data?.publicUrl || null;
   };
 
-  // ============================================================
-  // NOUVEAU — Charger tous les membres (onglet Contacts)
-  // ============================================================
+  // ---- Charger tous les membres (onglet Contacts) ----
   const fetchAllMembers = useCallback(async () => {
     if (!user) return;
     setLoadingMembers(true);
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, full_name, username, avatar_url, role")
-      .neq("id", user.id)
-      .order("full_name", { ascending: true })
-      .limit(100);
-    setAllMembers(
-      (data || []).map(p => ({ ...p, avatar_url: getAvatarUrl(p.avatar_url) }))
-    );
-    setLoadingMembers(false);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, username, avatar_url, role")
+        .neq("id", user.id)
+        .order("full_name", { ascending: true })
+        .limit(100);
+      if (error) throw error;
+      setAllMembers(
+        (data || []).map(p => ({ ...p, avatar_url: getAvatarUrl(p.avatar_url) }))
+      );
+    } catch (err) {
+      console.error("Erreur chargement contacts:", err);
+    } finally {
+      setLoadingMembers(false);
+    }
   }, [user]);
 
   useEffect(() => {
     if (activeTab === "contacts") fetchAllMembers();
   }, [activeTab, fetchAllMembers]);
 
-  // ============================================================
-  // TYPING — émet et écoute via Supabase Realtime Broadcast
-  // ============================================================
+  // ---- Typing ----
   const emitTyping = useCallback(() => {
     if (!user || !activePartner) return;
     supabase.channel(`typing-${activePartner.id}`)
       .send({ type: "broadcast", event: "typing", payload: { user_id: user.id } });
   }, [user, activePartner]);
 
-  // Écouter le typing du partenaire
   useEffect(() => {
     if (!user || !activePartner) return;
-
     const ch = supabase
       .channel(`typing-${user.id}`)
       .on("broadcast", { event: "typing" }, (payload) => {
         if (payload.payload?.user_id !== activePartner.id) return;
         setPartnerTyping(true);
-        // Remettre à false après 2s sans nouveau signal
         if (typingTimeout.current) clearTimeout(typingTimeout.current);
         typingTimeout.current = setTimeout(() => setPartnerTyping(false), 2000);
       })
       .subscribe();
-
     return () => {
       supabase.removeChannel(ch);
       if (typingTimeout.current) clearTimeout(typingTimeout.current);
     };
   }, [user, activePartner]);
 
-  // Émettre typing quand l'utilisateur tape
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value);
     emitTyping();
   };
 
-  // ---- Upload — inchangé ----
+  // ---- Upload & envoi ----
   const uploadAttachment = async (file: File): Promise<{ url: string; type: string } | null> => {
     if (!user || !activePartner) return null;
     const fileExt = file.name.split('.').pop();
@@ -230,7 +226,6 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
     return { url: urlData.publicUrl, type: isImage ? 'image' : 'file' };
   };
 
-  // ---- Envoi — inchangé ----
   const sendDM = async (attachment?: { url: string; type: string }) => {
     if ((!newMessage.trim() && !attachment) || !user || !activePartner || sending) return;
     setSending(true);
@@ -268,20 +263,20 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
     setUploading(false);
   };
 
-  // ---- Marquer comme lu — inchangé ----
+  // ---- Marquer comme lu ----
   const markAsRead = useCallback(async (partnerId: string) => {
     if (!user) return;
     await supabase.from("direct_messages").update({ is_read: true })
       .eq("sender_id", partnerId).eq("receiver_id", user.id).eq("is_read", false);
   }, [user]);
 
-  // ---- Ouvrir conversation — inchangé ----
+  // ---- Ouvrir conversation ----
   const openConversation = useCallback(async (
     partnerId: string, partnerName: string, partnerAvatarUrl: string | null = null
   ) => {
     if (!user) return;
     setActivePartner({ id: partnerId, name: partnerName, avatarUrl: partnerAvatarUrl });
-    setActiveTab("messages"); // revenir à l'onglet messages si on vient des contacts
+    setActiveTab("messages");
     const { data } = await supabase
       .from("direct_messages").select("*")
       .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
@@ -290,7 +285,7 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
     await markAsRead(partnerId);
   }, [user, markAsRead]);
 
-  // ---- Realtime messages — inchangé ----
+  // ---- Realtime messages ----
   useEffect(() => {
     if (!user || !activePartner) return;
     const channel = supabase.channel(`dm-${user.id}-${activePartner.id}`)
@@ -310,7 +305,7 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
     return () => { supabase.removeChannel(channel); };
   }, [user, activePartner, markAsRead]);
 
-  // ---- Présence — inchangée ----
+  // ---- Présence ----
   useEffect(() => {
     if (!user || !activePartner) return;
     const presence = supabase.channel(`presence-${activePartner.id}`)
@@ -323,19 +318,19 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
     return () => { supabase.removeChannel(presence); };
   }, [user, activePartner]);
 
-  // ---- InitialState — inchangé ----
+  // ---- InitialState ----
   useEffect(() => {
     if (!user || !initialState?.openConversationWith) return;
     const avatar = initialState.avatarUrl ? getAvatarUrl(initialState.avatarUrl) : null;
     openConversation(initialState.openConversationWith, initialState.userName || "Utilisateur", avatar);
   }, [user, initialState?.openConversationWith, openConversation]);
 
-  // ---- Scroll auto — inchangé ----
+  // ---- Scroll auto ----
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, partnerTyping]);
 
-  // ---- Charger conversations — inchangé ----
+  // ---- Charger conversations ----
   const fetchConversations = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -371,7 +366,7 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
 
   useEffect(() => { if (user) fetchConversations(); }, [user, fetchConversations]);
 
-  // ---- Recherche — inchangée ----
+  // ---- Recherche ----
   const searchUsers = async (q: string) => {
     setSearchQuery(q);
     if (q.length < 2) { setSearchResults([]); return; }
@@ -403,7 +398,7 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
   }
 
   // ============================================================
-  // VUE CONVERSATION — inchangée + typing indicator
+  // VUE CONVERSATION
   // ============================================================
   if (activePartner) {
     const partnerInitials = activePartner.name.slice(0, 2).toUpperCase();
@@ -431,7 +426,6 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
               <p className="font-bold text-sm text-foreground truncate">{activePartner.name}</p>
               <div className="flex items-center gap-1">
                 {partnerTyping ? (
-                  /* ← TYPING dans le header aussi */
                   <span className="text-[10px] text-primary font-medium animate-pulse">
                     en train d'écrire...
                   </span>
@@ -448,7 +442,6 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
           </div>
         </header>
 
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 max-w-lg mx-auto w-full space-y-2">
           {messages.length === 0 && (
             <div className="flex flex-col items-center py-16 text-center">
@@ -490,7 +483,6 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
                   {!isMe && !isNewGroup && <div className="w-6 flex-shrink-0" />}
 
                   <div className={`max-w-[72%] ${isMe ? "items-end" : "items-start"} flex flex-col`}>
-                    {/* ── BULLE améliorée avec dégradé pour l'expéditeur ── */}
                     <div
                       className={`rounded-2xl px-3.5 py-2.5 ${isMe ? "rounded-br-sm" : "rounded-bl-sm"}`}
                       style={isMe ? {
@@ -504,13 +496,11 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
                         boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
                       }}
                     >
-                      {/* Pièce jointe image */}
                       {msg.attachment_url && msg.attachment_type === 'image' && (
                         <button onClick={() => setPreviewAttachment(msg.attachment_url!)} className="block mb-1">
                           <img src={msg.attachment_url} alt="pièce jointe" className="max-w-[200px] max-h-[150px] rounded-lg object-cover" />
                         </button>
                       )}
-                      {/* Pièce jointe fichier */}
                       {msg.attachment_url && msg.attachment_type === 'file' && (
                         <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer"
                           className="flex items-center gap-2 text-sm bg-black/10 rounded-lg px-3 py-2 mb-1 no-underline">
@@ -522,7 +512,6 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
                       {msg.content && <p className="text-sm leading-relaxed break-words">{msg.content}</p>}
                     </div>
 
-                    {/* Indicateur lu/envoyé — inchangé */}
                     {isMe && (
                       <div className="flex items-center gap-1 mt-0.5 justify-end">
                         {msg.is_read ? (
@@ -544,15 +533,10 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
             );
           })}
 
-          {/* ── INDICATEUR TYPING en bas ── */}
-          {partnerTyping && (
-            <TypingIndicator name={activePartner.name.split(" ")[0]} />
-          )}
-
+          {partnerTyping && <TypingIndicator name={activePartner.name.split(" ")[0]} />}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Zone saisie — inchangée sauf handleInputChange */}
         <div className="sticky bottom-20 bg-card border-t border-border/50 px-4 py-3">
           <div className="max-w-lg mx-auto flex gap-2 items-center">
             <input type="file" ref={fileInputRef} onChange={handleFileSelect}
@@ -566,7 +550,7 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
             </button>
             <input
               value={newMessage}
-              onChange={handleInputChange}  /* ← émet le typing */
+              onChange={handleInputChange}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendDM(); } }}
               placeholder={`Message à ${activePartner.name}...`}
               className="flex-1 px-4 py-2.5 rounded-full border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
@@ -609,7 +593,7 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
           </button>
         </div>
 
-        {/* ── ONGLETS Messages / Contacts ── */}
+        {/* ONGLETS */}
         <div className="max-w-lg mx-auto flex gap-1 mt-2">
           {[
             { key: "messages", label: "Conversations", icon: MessageCircle },
@@ -632,7 +616,7 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
         </div>
       </header>
 
-      {/* Recherche — inchangée */}
+      {/* Recherche */}
       {showSearch && (
         <div className="max-w-lg mx-auto px-4 pt-3 pb-2">
           <input value={searchQuery} onChange={e => searchUsers(e.target.value)}
@@ -656,7 +640,7 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
         </div>
       )}
 
-      {/* ── ONGLET CONVERSATIONS — inchangé ── */}
+      {/* ONGLET CONVERSATIONS */}
       {activeTab === "messages" && (
         <div className="max-w-lg mx-auto px-4 py-3 space-y-1">
           {loading ? (
@@ -702,16 +686,28 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
         </div>
       )}
 
-      {/* ── ONGLET CONTACTS — tous les membres MIREC ── */}
+      {/* ONGLET CONTACTS — avec skeleton loader et compteur corrigé */}
       {activeTab === "contacts" && (
         <div className="max-w-lg mx-auto px-4 py-3">
+          {/* Compteur conditionnel : "Chargement..." tant que loadingMembers est true */}
           <p className="text-xs text-muted-foreground mb-3 font-medium">
-            {allMembers.length} membre{allMembers.length !== 1 ? "s" : ""} dans la communauté
+            {loadingMembers
+              ? "Chargement des membres..."
+              : `${allMembers.length} membre${allMembers.length !== 1 ? "s" : ""} dans la communauté`
+            }
           </p>
 
           {loadingMembers ? (
-            <div className="flex justify-center py-12">
-              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            // Skeleton loader (5 lignes)
+            <div className="space-y-2">
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : allMembers.length === 0 ? (
+            // Message si aucun autre membre
+            <div className="text-center py-12 text-muted-foreground text-sm">
+              Aucun autre membre pour l’instant.
             </div>
           ) : (
             <div className="space-y-1">
