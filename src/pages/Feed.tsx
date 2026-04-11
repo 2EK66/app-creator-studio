@@ -17,7 +17,7 @@ interface Flash {
   author_name: string;
   author_avatar: string | null;
   content: string;
-  type: "text" | "verse"; // pas d'audio pour l'instant
+  type: "text" | "verse";
   created_at: string;
   amen_count: number;
   my_amen: boolean;
@@ -488,15 +488,71 @@ export default function Feed({ onTabChange }: FeedProps) {
         </div>
       </header>
 
-      {/* SECTION FLASH (table flashes) */}
+      {/* SECTION FLASH (table flashes) — VERSION CORRIGÉE */}
       <div className="max-w-lg mx-auto px-4 pt-6 pb-2">
-        <div className="flex items-center gap-2 mb-4"><span className="text-sm font-bold text-foreground">✨ Témoignages Flash (24h)</span><div className="flex-1 h-px bg-gradient-to-r from-primary/30 to-transparent" /></div>
-        {loadingFlashes ? <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
-        : flashes.length === 0 ? <div className="flex flex-col items-center py-6 text-center"><div className="w-16 h-16 rounded-full flex items-center justify-center mb-3" style={{ background: "linear-gradient(135deg, #1A4B9B22, #7C3AED22)", border: "2px dashed #7C3AED44" }}><span className="text-2xl">🙏</span></div><p className="text-xs text-muted-foreground">Aucun témoignage aujourd'hui</p><button onClick={() => setShowNewFlash(true)} className="mt-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">Partager un flash</button></div>
-        : <div className="relative"><div className="flex items-end justify-around gap-2 mb-4">{flashes.slice(0,4).map((flash,i) => <FlashBubble key={flash.id} flash={flash} size={sizes[i% sizes.length]} delay={i} onOpen={setSelectedFlash} onAmen={handleAmen} />)}</div>
-          {flashes.length > 4 && <div className="flex items-end justify-around gap-2 mb-4">{flashes.slice(4,8).map((flash,i) => <FlashBubble key={flash.id} flash={flash} size={sizes[(i+4)% sizes.length]} delay={i+4} onOpen={setSelectedFlash} onAmen={handleAmen} />)}</div>}
-          {flashes.length > 8 && <div className="flex items-end justify-around gap-2">{flashes.slice(8,12).map((flash,i) => <FlashBubble key={flash.id} flash={flash} size={sizes[(i+8)% sizes.length]} delay={i+8} onOpen={setSelectedFlash} onAmen={handleAmen} />)}</div>}
-        </div>}
+
+        {/* Header avec bouton TOUJOURS visible */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-foreground">✨ Témoignages Flash (24h)</span>
+            {flashes.length > 0 && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white"
+                style={{ background: "linear-gradient(135deg, #1A4B9B, #7C3AED)" }}>
+                {flashes.length}
+              </span>
+            )}
+          </div>
+          {/* Bouton toujours affiché — qu'il y ait des flashes ou non */}
+          <button
+            onClick={() => { if (!user) { navigate("/auth"); return; } setShowNewFlash(true); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95"
+            style={{
+              background: "linear-gradient(135deg, #1A4B9B, #7C3AED)",
+              color: "#fff",
+              boxShadow: "0 2px 8px rgba(124,58,237,0.4)",
+            }}>
+            ✨ Partager
+          </button>
+        </div>
+
+        {loadingFlashes ? (
+          <div className="flex justify-center py-8">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : flashes.length === 0 ? (
+          /* État vide — invitation à partager */
+          <div className="flex flex-col items-center py-6 text-center">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3"
+              style={{ background: "linear-gradient(135deg, #1A4B9B22, #7C3AED22)", border: "2px dashed #7C3AED44" }}>
+              <span className="text-2xl">🙏</span>
+            </div>
+            <p className="text-xs text-white/60">Aucun témoignage aujourd'hui</p>
+            <p className="text-[10px] text-white/40 mt-1">Sois le premier à partager une victoire !</p>
+          </div>
+        ) : (
+          /* Grille de bulles */
+          <div className="relative">
+            <div className="flex items-end justify-around gap-2 mb-4">
+              {flashes.slice(0, 4).map((flash, i) => (
+                <FlashBubble key={flash.id} flash={flash} size={sizes[i % sizes.length]} delay={i} onOpen={setSelectedFlash} onAmen={handleAmen} />
+              ))}
+            </div>
+            {flashes.length > 4 && (
+              <div className="flex items-end justify-around gap-2 mb-4">
+                {flashes.slice(4, 8).map((flash, i) => (
+                  <FlashBubble key={flash.id} flash={flash} size={sizes[(i + 4) % sizes.length]} delay={i + 4} onOpen={setSelectedFlash} onAmen={handleAmen} />
+                ))}
+              </div>
+            )}
+            {flashes.length > 8 && (
+              <div className="flex items-end justify-around gap-2">
+                {flashes.slice(8, 12).map((flash, i) => (
+                  <FlashBubble key={flash.id} flash={flash} size={sizes[(i + 8) % sizes.length]} delay={i + 8} onOpen={setSelectedFlash} onAmen={handleAmen} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* FILTRES DU FEED (posts classiques) */}
