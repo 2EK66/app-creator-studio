@@ -13,13 +13,21 @@ import { Switch } from "@/components/ui/switch";
 
 // ============================================================
 // TYPES
-//
-============================================================
+// ============================================================
 interface Skill {
   id: string;
   skill: string;
   level: string;
   description: string;
+}
+
+interface ProfileData {
+  full_name: string;
+  username: string;
+  avatar_url: string | null;
+  points_total: number;
+  bio: string;
+  cover_url: string | null;
 }
 
 // ============================================================
@@ -122,11 +130,11 @@ function SkillsSection({ userId }: { userId: string }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    (supabase
-      .from("member_skills" as any)
+    supabase
+      .from("member_skills")
       .select("*")
       .eq("profile_id", userId)
-      .order("created_at", { ascending: false }) as any)
+      .order("created_at", { ascending: false })
       .then(({ data }: any) => {
         if (data) setSkills(data as Skill[]);
         setLoading(false);
@@ -140,11 +148,11 @@ function SkillsSection({ userId }: { userId: string }) {
   const addSkill = async () => {
     if (!newSkill.trim()) return;
     setSaving(true);
-    const { data, error } = await (supabase
-      .from("member_skills" as any)
+    const { data, error } = await supabase
+      .from("member_skills")
       .insert({ profile_id: userId, skill: newSkill.trim(), level: newLevel, description: newDesc.trim() || null })
       .select()
-      .single() as any);
+      .single();
     if (!error && data) {
       setSkills(prev => [data as Skill, ...prev]);
       setNewSkill(""); setNewLevel("intermediaire"); setNewDesc("");
@@ -154,7 +162,7 @@ function SkillsSection({ userId }: { userId: string }) {
   };
 
   const deleteSkill = async (id: string) => {
-    await (supabase.from("member_skills" as any).delete().eq("id", id) as any);
+    await supabase.from("member_skills").delete().eq("id", id);
     setSkills(prev => prev.filter(s => s.id !== id));
   };
 
@@ -302,15 +310,19 @@ export default function Profile() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("full_name, username, avatar_url, points_total, bio, cover_url").eq("id", user.id).single()
+    supabase
+      .from("profiles")
+      .select("full_name, username, avatar_url, points_total, bio, cover_url")
+      .eq("id", user.id)
+      .single()
       .then(({ data }) => {
         if (data) {
           setFullName(data.full_name || "");
           setUsername(data.username || "");
           setAvatarUrl(data.avatar_url || null);
           setPoints(data.points_total || 0);
-          setBio((data as any).bio || "");
-          setCoverUrl((data as any).cover_url || null);
+          setBio(data.bio || "");
+          setCoverUrl(data.cover_url || null);
         }
       });
   }, [user]);
@@ -361,7 +373,7 @@ export default function Profile() {
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
-    await supabase.from("profiles").update({ full_name: fullName, username, bio } as any).eq("id", user.id);
+    await supabase.from("profiles").update({ full_name: fullName, username, bio }).eq("id", user.id);
     setSaving(false);
     setEditing(false);
   };
@@ -376,7 +388,7 @@ export default function Profile() {
       const { error: uploadError } = await supabase.storage.from("covers").upload(filePath, file);
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("covers").getPublicUrl(filePath);
-      await supabase.from("profiles").update({ cover_url: urlData.publicUrl } as any).eq("id", user?.id);
+      await supabase.from("profiles").update({ cover_url: urlData.publicUrl }).eq("id", user?.id);
       setCoverUrl(urlData.publicUrl);
     } catch (error) {
       console.error("Erreur upload cover:", error);
