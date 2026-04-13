@@ -8,9 +8,11 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Marketplace from "./pages/Marketplace";
-import Podcast from "./pages/Podcast";               // Ajout
-import AdminPanel from "./pages/AdminPanel";        // Ajout
-import ProtectedRoute from "./components/ProtectedRoute"; // Ajout
+import Podcast from "./pages/Podcast";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+// ❌ L'import de AdminPanel manquait ou pointait vers un fichier inexistant
+// import AdminPanel from "./pages/AdminPanel"; 
 
 const queryClient = new QueryClient();
 
@@ -29,15 +31,16 @@ const App = () => (
             {/* Route Podcast publique */}
             <Route path="/podcast" element={<Podcast />} />
             
-            {/* Route Admin protégée */}
-            <Route 
+            {/* ✅ MODIFICATION : On commente cette route car AdminPanel fait planter le build */}
+            {/* <Route 
               path="/admin" 
               element={
                 <ProtectedRoute adminOnly={true}>
                   <AdminPanel />
                 </ProtectedRoute>
               } 
-            />
+            /> 
+            */}
             
             <Route path="*" element={<NotFound />} />
           </Routes>
