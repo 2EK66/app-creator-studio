@@ -2,23 +2,45 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, Check, X, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, X } from "lucide-react";
 
 export default function AdminRequests() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Vérification admin (optionnelle mais sécurisée)
-  if (user?.email !== "admin@mirec.org") {
-    return <div className="p-8 text-white">Accès refusé.</div>;
-  }
-
+  // Vérifier si l'utilisateur est admin via la table profiles
   useEffect(() => {
-    fetchRequests();
-  }, []);
+    if (!user) {
+      setChecking(false);
+      return;
+    }
+    const checkAdmin = async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+      if (data?.role === "admin") {
+        setIsAdmin(true);
+      }
+      setChecking(false);
+    };
+    checkAdmin();
+  }, [user]);
+
+  // Charger les demandes seulement si admin
+  useEffect(() => {
+    if (isAdmin) {
+      fetchRequests();
+    } else if (!checking && !isAdmin) {
+      setLoading(false);
+    }
+  }, [isAdmin, checking]);
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -63,7 +85,7 @@ export default function AdminRequests() {
         is_banned: false,
       });
     if (insertError) {
-      alert("Canal créé avec succès mais erreur d'insertion ?");
+      alert("Erreur lors de la création du canal.");
       console.error(insertError);
     } else {
       alert("Canal créé !");
@@ -80,7 +102,14 @@ export default function AdminRequests() {
     fetchRequests();
   };
 
-  if (loading) return <div className="text-white p-8">Chargement...</div>;
+  // Affichages de chargement et erreurs
+  if (authLoading || checking) {
+    return <div className="text-white p-8">Chargement...</div>;
+  }
+  if (!user || !isAdmin) {
+    return <div className="text-white p-8">Accès refusé. Vous n'êtes pas administrateur.</div>;
+  }
+  if (loading) return <div className="text-white p-8">Chargement des demandes...</div>;
   if (error) return <div className="text-red-500 p-8">Erreur : {error}</div>;
 
   return (
