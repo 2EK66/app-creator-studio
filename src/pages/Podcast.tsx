@@ -1,4 +1,4 @@
-// src/pages/Podcast.tsx (version corrigée)
+// src/pages/Podcast.tsx
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,11 +28,25 @@ export default function Podcast() {
   const [activeTab, setActiveTab] = useState<"discover" | "subscriptions">("discover");
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Vérifier si l'utilisateur est admin
+  // Vérifier si l'utilisateur est admin via la table profiles
   useEffect(() => {
     if (!user) return;
-    supabase.from("admins").select("user_id").eq("user_id", user.id).single()
-      .then(({ data }) => setIsAdmin(!!data));
+    
+    const checkAdminStatus = async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (data && data.role === 'admin') {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdminStatus();
   }, [user]);
 
   // Vérifier si l'utilisateur est créateur actif
@@ -43,7 +57,7 @@ export default function Podcast() {
       .then(({ data }) => setIsCreator(!!data));
   }, [user]);
 
-  // Charger les canaux (exemple simplifié, tu peux garder ta version complète)
+  // Charger les canaux (exemple simplifié)
   const fetchChannels = useCallback(async () => {
     setLoading(true);
     const { data } = await supabase.from("podcast_channels").select("*").eq("is_banned", false).order("created_at", { ascending: false });
