@@ -19,14 +19,18 @@ export default function ProtectedRoute({ children, adminOnly = false }: Protecte
       setChecking(false);
       return;
     }
-    // Vérifier si l'utilisateur est admin (table admins)
+    // Vérifier si l'utilisateur est admin via la table profiles (champ role)
     const checkAdmin = async () => {
-      const { data } = await supabase
-        .from("admins")
-        .select("user_id")
-        .eq("user_id", user.id)
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
         .single();
-      setIsAdmin(!!data);
+      if (data && data.role === "admin") {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
       setChecking(false);
     };
     checkAdmin();
