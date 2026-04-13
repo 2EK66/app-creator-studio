@@ -11,8 +11,8 @@ import Marketplace from "./pages/Marketplace";
 import Podcast from "./pages/Podcast";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// ✅ CORRECTION : Importation depuis la racine (./AdminRequests) et non ./pages/
-import AdminRequests from "./AdminRequests"; 
+// ✅ CORRECTION : L'import doit pointer vers la racine du projet
+import AdminPanel from "../AdminPanel"; 
 
 const queryClient = new QueryClient();
 
@@ -27,16 +27,13 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/marketplace" element={<Marketplace />} />
-            
-            {/* Route Podcast publique */}
             <Route path="/podcast" element={<Podcast />} />
             
-            {/* ✅ Route Admin maintenant fonctionnelle pour le build */}
             <Route 
               path="/admin" 
               element={
                 <ProtectedRoute adminOnly={true}>
-                  <AdminRequests />
+                  <AdminPanel />
                 </ProtectedRoute>
               } 
             />
