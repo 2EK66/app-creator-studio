@@ -8,6 +8,9 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Marketplace from "./pages/Marketplace";
+import Podcast from "./pages/Podcast";               // Ajout
+import AdminPanel from "./pages/AdminPanel";        // Ajout
+import ProtectedRoute from "./components/ProtectedRoute"; // Ajout
 
 const queryClient = new QueryClient();
 
@@ -21,8 +24,22 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="*" element={<NotFound />} />
             <Route path="/marketplace" element={<Marketplace />} />
+            
+            {/* Route Podcast publique */}
+            <Route path="/podcast" element={<Podcast />} />
+            
+            {/* Route Admin protégée */}
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedRoute adminOnly={true}>
+                  <AdminPanel />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
