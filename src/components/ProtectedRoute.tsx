@@ -19,6 +19,7 @@ export default function ProtectedRoute({ children, adminOnly = false }: Protecte
       setChecking(false);
       return;
     }
+    // Vérifier si l'utilisateur est admin via la table profiles (champ role)
     const checkAdmin = async () => {
       const { data, error } = await supabase
         .from("profiles")
@@ -43,12 +44,9 @@ export default function ProtectedRoute({ children, adminOnly = false }: Protecte
     return <Navigate to="/auth" replace />;
   }
 
-  // ✅ MODIFICATION : on ne bloque plus même si adminOnly=true et l'utilisateur n'est pas admin
-  // La ligne suivante est commentée :
-  // if (adminOnly && !isAdmin) {
-  //   return <div className="p-8 text-white text-center">Accès refusé. Vous n'êtes pas administrateur.</div>;
-  // }
+  if (adminOnly && !isAdmin) {
+    return <div className="p-8 text-white text-center">Accès refusé. Vous n'êtes pas administrateur.</div>;
+  }
 
-  // On laisse toujours passer les enfants
   return <>{children}</>;
 }
