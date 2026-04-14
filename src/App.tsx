@@ -9,7 +9,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Marketplace from "./pages/Marketplace";
 import Podcast from "./pages/Podcast";
-import AdminPanel from "./pages/AdminPanel";      // ✅ Correction import
+import AdminPanel from "../AdminPanel";     // ✅ Correction import
 import CreatorDashboard from "./pages/CreatorDashboard"; // ✅ Ajout import
 import ProtectedRoute from "./components/ProtectedRoute";
 
