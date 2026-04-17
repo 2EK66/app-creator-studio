@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, Video, Eye, Users, Clock } from "lucide-react";
+import { ArrowLeft, Video, Eye, Users, Clock, UploadCloud, Bell, Play } from "lucide-react";
+import { motion } from "framer-motion";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
-export default function CreatorDashboard({ onClose }: { onClose: () => void }) {
+export default function CreatorDashboard({ onClose }) {
   const { user } = useAuth();
 
-  const [channel, setChannel] = useState<any>(null);
-  const [episodes, setEpisodes] = useState<any[]>([]);
-  const [seriesList, setSeriesList] = useState<any[]>([]);
+  const [channel, setChannel] = useState(null);
+  const [episodes, setEpisodes] = useState([]);
+  const [seriesList, setSeriesList] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [selectedAudio, setSelectedAudio] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -16,7 +20,7 @@ export default function CreatorDashboard({ onClose }: { onClose: () => void }) {
     title: "",
     description: "",
     series_id: "",
-    audioFile: null as File | null
+    audioFile: null
   });
 
   useEffect(() => {
@@ -25,42 +29,29 @@ export default function CreatorDashboard({ onClose }: { onClose: () => void }) {
     const loadData = async () => {
       setLoading(true);
 
-      // ✅ CORRECTION: utiliser maybeSingle()
-      const { data: channelData, error } = await supabase
+      const { data: channelData } = await supabase
         .from("podcast_channels")
         .select("*")
         .eq("creator_id", user.id)
         .maybeSingle();
 
-      if (error) {
-        console.error(error);
-        setLoading(false);
-        return;
-      }
-
       setChannel(channelData);
 
-      // ✅ Si pas créateur → stop ici (mais sans bloquer)
-      if (!channelData) {
-        setLoading(false);
-        return;
-      }
+      if (!channelData) return setLoading(false);
 
-      // Charger épisodes
       const { data: eps } = await supabase
         .from("podcast_episodes")
-        .select("*, series:series_id(*)")
+        .select("*")
         .eq("channel_id", channelData.id);
 
       setEpisodes(eps || []);
 
-      // Charger séries
-      const { data: series } = await supabase
-        .from("podcast_series")
-        .select("*")
-        .eq("channel_id", channelData.id);
-
-      setSeriesList(series || []);
+      // fake notifications
+      setNotifications([
+        "Nouveau follower 🎉",
+        "Ton épisode performe bien 🚀",
+        "Tu as gagné 10 abonnés"
+      ]);
 
       setLoading(false);
     };
@@ -70,188 +61,122 @@ export default function CreatorDashboard({ onClose }: { onClose: () => void }) {
 
   const handleUpload = async () => {
     if (!form.audioFile || !channel) return;
+    setUploading(true);
 
-    try {
-      setUploading(true);
+    const fileName = `${Date.now()}.${form.audioFile.name.split(".").pop()}`;
 
-      const fileExt = form.audioFile.name.split(".").pop();
-      const fileName = `${Date.now()}.${fileExt}`;
+    await supabase.storage
+      .from("podcast-audio")
+      .upload(`episodes/${fileName}`, form.audioFile);
 
-      const { error } = await supabase.storage
-        .from("podcast-audio")
-        .upload(`episodes/${fileName}`, form.audioFile);
+    const { data } = supabase.storage
+      .from("podcast-audio")
+      .getPublicUrl(`episodes/${fileName}`);
 
-      if (error) throw error;
-
-      const { data } = supabase.storage
-        .from("podcast-audio")
-        .getPublicUrl(`episodes/${fileName}`);
-
-      await supabase.from("podcast_episodes").insert({
-        channel_id: channel.id,
-        title: form.title,
-        description: form.description,
-        audio_url: data.publicUrl,
-        series_id: form.series_id || null,
-        is_published: true,
-        duration_sec: 0,
-      });
-
-      alert("Épisode publié !");
-    } catch (err) {
-      console.error(err);
-      alert("Erreur upload");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const startLive = async () => {
-    if (!channel) return;
-
-    const res = await fetch("/api/create-live", {
-      method: "POST",
-      body: JSON.stringify({ channelId: channel.id }),
+    await supabase.from("podcast_episodes").insert({
+      channel_id: channel.id,
+      title: form.title,
+      description: form.description,
+      audio_url: data.publicUrl,
+      is_published: true,
     });
 
-    const { streamKey } = await res.json();
-    alert(`Clé de stream : ${streamKey}`);
+    setUploading(false);
+    alert("Publié 🚀");
   };
 
-  // ✅ LOADING
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-white">
-        Chargement...
-      </div>
-    );
-  }
-
-  // ✅ UTILISATEUR NON CREATEUR
-  if (!channel) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-white">
-        <p className="mb-4">Tu n'as pas encore d'espace créateur</p>
-        <button
-          onClick={() => alert("Créer un espace créateur (à implémenter)")}
-          className="bg-purple-600 px-4 py-2 rounded"
-        >
-          Devenir créateur
-        </button>
-      </div>
-    );
-  }
+  if (loading) return <div className="text-white p-10">Chargement...</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0d0820] to-[#1a0838] pb-20">
-      <div className="sticky top-0 p-4 flex items-center gap-3 backdrop-blur-md bg-black/50">
-        <button onClick={onClose}>
-          <ArrowLeft className="text-white" />
-        </button>
-        <h1 className="text-white font-bold">
-          Espace créateur – {channel?.name}
-        </h1>
+    <div className="min-h-screen bg-gradient-to-br from-[#0d0820] to-[#1a0838] text-white">
+      <div className="flex items-center gap-3 p-4 border-b border-white/10">
+        <button onClick={onClose}><ArrowLeft /></button>
+        <h1 className="font-bold text-lg">{channel?.name}</h1>
       </div>
 
-      <div className="p-4 space-y-6">
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white/5 p-3 rounded-xl">
-            <Eye className="text-purple-400" />
-            <p className="text-white font-bold">
-              {episodes.reduce((a, b) => a + (b.plays || 0), 0)}
-            </p>
-            <p className="text-xs text-white/40">Écoutes</p>
+      <div className="p-4 space-y-6 max-w-5xl mx-auto">
+
+        {/* STATS */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="bg-white/5 p-4 rounded-2xl">
+            <Eye />
+            <p className="text-xl font-bold">{episodes.length}</p>
+            <p className="text-xs text-white/50">Épisodes</p>
           </div>
 
-          <div className="bg-white/5 p-3 rounded-xl">
-            <Users className="text-purple-400" />
-            <p className="text-white font-bold">
-              {channel?.subscriber_count || 0}
-            </p>
-            <p className="text-xs text-white/40">Abonnés</p>
+          <div className="bg-white/5 p-4 rounded-2xl">
+            <Users />
+            <p className="text-xl font-bold">{channel?.subscriber_count || 0}</p>
+            <p className="text-xs text-white/50">Abonnés</p>
           </div>
 
-          <div className="bg-white/5 p-3 rounded-xl">
-            <Clock className="text-purple-400" />
-            <p className="text-white font-bold">{episodes.length}</p>
-            <p className="text-xs text-white/40">Épisodes</p>
+          <div className="bg-white/5 p-4 rounded-2xl">
+            <Clock />
+            <p className="text-xl font-bold">{episodes.reduce((a,b)=>a+(b.plays||0),0)}</p>
+            <p className="text-xs text-white/50">Écoutes</p>
           </div>
         </div>
 
-        {/* Upload */}
+        {/* GRAPH */}
         <div className="bg-white/5 p-4 rounded-2xl">
-          <h2 className="text-white font-semibold mb-3">
-            Publier un épisode
-          </h2>
+          <h2 className="mb-2">Statistiques</h2>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={episodes.map((e,i)=>({name:`Ep ${i+1}`, views:e.plays||0}))}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="views" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
 
-          <input
-            type="text"
-            placeholder="Titre"
-            className="w-full p-2 rounded bg-black/50 text-white mb-2"
-            onChange={(e) =>
-              setForm({ ...form, title: e.target.value })
-            }
-          />
+        {/* NOTIFICATIONS */}
+        <div className="bg-white/5 p-4 rounded-2xl">
+          <h2 className="flex items-center gap-2"><Bell /> Notifications</h2>
+          {notifications.map((n,i)=>(
+            <p key={i} className="text-sm text-white/70">• {n}</p>
+          ))}
+        </div>
 
-          <textarea
-            placeholder="Description"
-            className="w-full p-2 rounded bg-black/50 text-white mb-2"
-            rows={3}
-            onChange={(e) =>
-              setForm({ ...form, description: e.target.value })
-            }
-          />
+        {/* PLAYER */}
+        {selectedAudio && (
+          <div className="bg-black/40 p-4 rounded-2xl">
+            <h2>Lecture en cours</h2>
+            <audio controls src={selectedAudio} className="w-full" />
+          </div>
+        )}
 
-          <select
-            className="w-full p-2 rounded bg-black/50 text-white mb-2"
-            onChange={(e) =>
-              setForm({ ...form, series_id: e.target.value })
-            }
-          >
-            <option value="">Sans série</option>
-            {seriesList.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.title}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="file"
-            accept="audio/*"
-            className="text-white mb-2"
-            onChange={(e) =>
-              setForm({
-                ...form,
-                audioFile: e.target.files?.[0] || null,
-              })
-            }
-          />
-
-          <button
-            onClick={handleUpload}
-            disabled={uploading}
-            className="bg-purple-600 px-4 py-2 rounded text-white w-full"
-          >
+        {/* UPLOAD */}
+        <div className="bg-white/5 p-4 rounded-2xl space-y-2">
+          <h2 className="flex gap-2 items-center"><UploadCloud /> Publier</h2>
+          <input placeholder="Titre" className="w-full p-2 rounded bg-black/40"
+            onChange={(e)=>setForm({...form,title:e.target.value})}/>
+          <textarea placeholder="Description" className="w-full p-2 rounded bg-black/40"
+            onChange={(e)=>setForm({...form,description:e.target.value})}/>
+          <input type="file" accept="audio/*"
+            onChange={(e)=>setForm({...form,audioFile:e.target.files?.[0]})}/>
+          <button onClick={handleUpload} className="bg-purple-600 w-full py-2 rounded">
             {uploading ? "Upload..." : "Publier"}
           </button>
         </div>
 
-        {/* Live */}
-        <div className="bg-white/5 p-4 rounded-2xl">
-          <h2 className="text-white font-semibold mb-3">
-            Lancer un live
-          </h2>
-
-          <button
-            onClick={startLive}
-            className="bg-red-600 px-4 py-2 rounded text-white w-full"
-          >
-            <Video className="inline mr-2" />
-            Démarrer un live
-          </button>
+        {/* EPISODES */}
+        <div className="space-y-3">
+          <h2>Mes épisodes</h2>
+          {episodes.map(ep => (
+            <motion.div key={ep.id} whileHover={{scale:1.02}}
+              className="bg-white/5 p-3 rounded-xl flex justify-between items-center">
+              <div>
+                <p className="font-bold">{ep.title}</p>
+                <p className="text-xs text-white/50">{ep.description}</p>
+              </div>
+              <button onClick={()=>setSelectedAudio(ep.audio_url)}>
+                <Play />
+              </button>
+            </motion.div>
+          ))}
         </div>
+
       </div>
     </div>
   );
