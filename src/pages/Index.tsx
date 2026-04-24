@@ -22,7 +22,8 @@ export default function Index() {
   const handleTabChange = (tab: string, state?: Record<string, any>) => {
     if (tab === "inbox" && state) {
       setInboxState(state as any);
-      // Quand on ouvre les messages → on remet le badge à 0 (les messages deviennent lus)
+      // Dès qu'on ouvre la messagerie, on remet le badge à 0
+      // (Tu peux aussi marquer les messages comme lus ici si besoin)
       setUnreadMessages(0);
     } else {
       setInboxState({});
@@ -30,7 +31,7 @@ export default function Index() {
     setActiveTab(tab);
   };
 
-  // ✅ Compteur réel depuis la table "direct_messages"
+  // ✅ Compteur réel des messages non lus (basé sur read_at IS NULL)
   useEffect(() => {
     if (!user) return;
 
@@ -39,7 +40,7 @@ export default function Index() {
         .from("direct_messages")
         .select("*", { count: "exact", head: true })
         .eq("receiver_id", user.id)
-        .is("read_at", null);   // non lu si read_at est NULL
+        .is("read_at", null);   // non lu = read_at NULL
 
       if (!error && count !== null) {
         setUnreadMessages(count);
@@ -48,7 +49,7 @@ export default function Index() {
 
     fetchUnreadCount();
 
-    // 🔁 Écouter les nouveaux messages en temps réel
+    // 🔁 Écoute en temps réel
     const channel = supabase
       .channel("realtime:direct_messages")
       .on(
@@ -61,7 +62,7 @@ export default function Index() {
         },
         (payload) => {
           const newMessage = payload.new as any;
-          // Si le message est inséré avec read_at = NULL → non lu
+          // Nouveau message non lu ? on incrémente
           if (newMessage.read_at === null) {
             setUnreadMessages((prev) => prev + 1);
           }
@@ -109,7 +110,7 @@ export default function Index() {
       <BottomTabs 
         active={activeTab} 
         onChange={handleTabChange}
-        unreadMessages={unreadMessages}
+        unreadMessages={unreadMessages}   // ← Le badge est bien passé
       />
     </div>
   );
