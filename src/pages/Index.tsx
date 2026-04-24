@@ -22,8 +22,7 @@ export default function Index() {
   const handleTabChange = (tab: string, state?: Record<string, any>) => {
     if (tab === "inbox" && state) {
       setInboxState(state as any);
-      // Dès qu'on ouvre la messagerie, on remet le badge à 0
-      // (Tu peux aussi marquer les messages comme lus ici si besoin)
+      // Remise à zéro locale – le composant Messages marquera les messages comme lus
       setUnreadMessages(0);
     } else {
       setInboxState({});
@@ -31,7 +30,7 @@ export default function Index() {
     setActiveTab(tab);
   };
 
-  // ✅ Compteur réel des messages non lus (basé sur read_at IS NULL)
+  // ✅ Compteur réel basé sur is_read (booléen)
   useEffect(() => {
     if (!user) return;
 
@@ -40,7 +39,7 @@ export default function Index() {
         .from("direct_messages")
         .select("*", { count: "exact", head: true })
         .eq("receiver_id", user.id)
-        .is("read_at", null);   // non lu = read_at NULL
+        .eq("is_read", false);   // colonne utilisée par le composant Messages
 
       if (!error && count !== null) {
         setUnreadMessages(count);
@@ -62,8 +61,7 @@ export default function Index() {
         },
         (payload) => {
           const newMessage = payload.new as any;
-          // Nouveau message non lu ? on incrémente
-          if (newMessage.read_at === null) {
+          if (newMessage.is_read === false) {
             setUnreadMessages((prev) => prev + 1);
           }
         }
@@ -79,8 +77,8 @@ export default function Index() {
         (payload) => {
           const updated = payload.new as any;
           const old = payload.old as any;
-          // Si read_at passe de NULL à une valeur (message devient lu)
-          if (old.read_at === null && updated.read_at !== null) {
+          // Si is_read passe de false à true (message lu)
+          if (old.is_read === false && updated.is_read === true) {
             setUnreadMessages((prev) => Math.max(0, prev - 1));
           }
         }
@@ -110,7 +108,7 @@ export default function Index() {
       <BottomTabs 
         active={activeTab} 
         onChange={handleTabChange}
-        unreadMessages={unreadMessages}   // ← Le badge est bien passé
+        unreadMessages={unreadMessages}
       />
     </div>
   );
