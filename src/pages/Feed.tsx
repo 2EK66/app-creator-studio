@@ -764,25 +764,24 @@ export default function Feed({ onTabChange }: FeedProps) {
         {filter === "podcast" ? null
         : loadingPosts ? (
           <div className="flex flex-col items-center py-16 gap-3">
-            <div className="w-8 h-8 rounded-full border-3 border-amber-400 border-t-transparent animate-spin" style={{ borderWidth: 3 }} />
-            <p className="text-xs text-gray-400">Chargement du fil...</p>
+            <div className="w-8 h-8 rounded-full border-primary border-t-transparent animate-spin" style={{ borderWidth: 3 }} />
+            <p className="text-xs text-muted-foreground">Chargement du fil...</p>
           </div>
         ) : filteredPosts.length === 0 ? (
           <div className="flex flex-col items-center py-16 text-center gap-3">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-              style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)" }}>
-              <Sparkles className="w-8 h-8 text-amber-400/60" />
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-primary/10 border border-primary/20">
+              <Sparkles className="w-8 h-8 text-primary/60" />
             </div>
-            <p className="font-semibold text-gray-700">Aucun post ici</p>
-            <p className="text-sm text-gray-400">Sois le premier à partager quelque chose !</p>
+            <p className="font-semibold text-foreground">Aucun post ici</p>
+            <p className="text-sm text-muted-foreground">Sois le premier à partager quelque chose !</p>
           </div>
         ) : filteredPosts.map(post => {
           const tc = typeConfig(post.type);
           const isAuthor  = user?.id === post.author_id;
           const isEditing = editingPost === post.id;
           return (
-            <div key={post.id} className="rounded-2xl overflow-hidden bg-white transition-all hover:shadow-md"
-              style={{ border: `1px solid ${tc.border}`, boxShadow: `0 2px 12px rgba(0,0,0,0.06)` }}>
+            <div key={post.id} className="rounded-2xl overflow-hidden bg-card border border-border transition-all hover:shadow-md shadow-sm"
+              style={{ borderColor: tc.border }}>
 
               {/* Bandeau couleur */}
               <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${tc.color}, ${tc.color}88)` }} />
@@ -793,10 +792,10 @@ export default function Feed({ onTabChange }: FeedProps) {
                     onClick={() => setPhotoModal({ url: post.author_avatar, name: post.author_name, initials: post.author_initials })} />
                   <div className="flex-1 min-w-0">
                     <button onClick={() => setProfileModal({ userId: post.author_id, name: post.author_name, initials: post.author_initials, avatar: post.author_avatar })}
-                      className="text-sm font-bold text-gray-800 hover:text-primary hover:underline text-left block truncate">
+                      className="text-sm font-bold text-foreground hover:text-primary hover:underline text-left block truncate">
                       {post.author_name}
                     </button>
-                    <p className="text-[11px] text-gray-400">{timeAgo(post.created_at)}</p>
+                    <p className="text-[11px] text-muted-foreground">{timeAgo(post.created_at)}</p>
                   </div>
                   <span className="text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
                     style={{ color: tc.color, backgroundColor: tc.bg, border: `1px solid ${tc.border}` }}>
@@ -804,17 +803,17 @@ export default function Feed({ onTabChange }: FeedProps) {
                   </span>
                   {isAuthor && (
                     <div className="relative">
-                      <button onClick={() => setMenuOpen(menuOpen === post.id ? null : post.id)} className="p-1.5 rounded-full hover:bg-gray-100">
-                        <MoreVertical className="w-4 h-4 text-gray-400" />
+                      <button onClick={() => setMenuOpen(menuOpen === post.id ? null : post.id)} className="p-1.5 rounded-full hover:bg-muted">
+                        <MoreVertical className="w-4 h-4 text-muted-foreground" />
                       </button>
                       {menuOpen === post.id && (
                         <>
                           <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(null)} />
-                          <div className="absolute right-0 top-8 z-50 bg-white border border-gray-100 rounded-xl shadow-lg py-1 min-w-[140px]">
-                            <button onClick={() => startEdit(post)} className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                          <div className="absolute right-0 top-8 z-50 bg-popover text-popover-foreground border border-border rounded-xl shadow-lg py-1 min-w-[140px]">
+                            <button onClick={() => startEdit(post)} className="flex items-center gap-2 w-full px-3 py-2.5 text-sm hover:bg-muted">
                               <Pencil className="w-3.5 h-3.5" /> Modifier
                             </button>
-                            <button onClick={() => handleDeletePost(post.id)} className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-red-500 hover:bg-red-50">
+                            <button onClick={() => handleDeletePost(post.id)} className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10">
                               <Trash2 className="w-3.5 h-3.5" /> Supprimer
                             </button>
                           </div>
@@ -827,9 +826,9 @@ export default function Feed({ onTabChange }: FeedProps) {
                 {isEditing ? (
                   <div className="mb-4 space-y-2">
                     <textarea value={editContent} onChange={e => setEditContent(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" rows={3} />
+                      className="w-full px-3 py-2 rounded-xl border border-border bg-muted text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" rows={3} />
                     <div className="flex gap-2 justify-end">
-                      <button onClick={() => setEditingPost(null)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100">
+                      <button onClick={() => setEditingPost(null)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-muted">
                         <X className="w-3.5 h-3.5" /> Annuler
                       </button>
                       <button onClick={() => saveEdit(post.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs bg-primary text-primary-foreground font-medium">
@@ -841,11 +840,11 @@ export default function Feed({ onTabChange }: FeedProps) {
                   <div className="mb-3 space-y-3">
                     {post.content && (
                       <div className="rounded-xl px-3.5 py-3" style={{ background: tc.gradient }}>
-                        <p className="text-sm text-gray-800 leading-relaxed">{post.content}</p>
+                        <p className="text-sm text-foreground leading-relaxed">{post.content}</p>
                       </div>
                     )}
                     {post.image_url && (
-                      <div className="rounded-xl overflow-hidden border border-gray-100">
+                      <div className="rounded-xl overflow-hidden border border-border">
                         <img src={post.image_url} alt="" className="w-full max-h-80 object-cover cursor-pointer hover:opacity-95 transition-opacity"
                           onClick={() => setPhotoModal({ url: post.image_url, name: post.author_name, initials: post.author_initials })} />
                       </div>
@@ -861,12 +860,12 @@ export default function Feed({ onTabChange }: FeedProps) {
                     { key: "coeur" as const, emoji: "❤️", activeColor: "#e11d48" },
                   ]).map(r => (
                     <button key={r.key} onClick={() => handleReact(post.id, r.key)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-90"
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-90 ${
+                        post.user_reactions[r.key] ? "" : "bg-muted text-muted-foreground border-[1.5px] border-transparent"
+                      }`}
                       style={post.user_reactions[r.key] ? {
                         background: `${r.activeColor}15`, color: r.activeColor, border: `1.5px solid ${r.activeColor}44`,
-                      } : {
-                        background: "#f3f4f6", color: "#6b7280", border: "1.5px solid transparent",
-                      }}>
+                      } : undefined}>
                       <span className="text-sm leading-none">{r.emoji}</span>
                       <span>{post.reactions[r.key]}</span>
                     </button>
@@ -882,8 +881,8 @@ export default function Feed({ onTabChange }: FeedProps) {
 
       {/* FAB */}
       <button onClick={() => { if (!user) { navigate("/auth"); return; } setShowNewPost(true); }}
-        className="fixed bottom-20 right-4 sm:right-[calc(50%-224px)] w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-30"
-        style={{ background: "linear-gradient(135deg, #1A4B9B, #7C3AED)", boxShadow: "0 4px 20px rgba(26,75,155,0.4)" }}>
+        className="fixed bottom-20 right-4 sm:right-[calc(50%-224px)] w-14 h-14 rounded-full text-primary-foreground shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-30"
+        style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--mirec-purple)))", boxShadow: "0 4px 20px hsl(var(--primary) / 0.4)" }}>
         <Plus className="w-6 h-6" />
       </button>
 
