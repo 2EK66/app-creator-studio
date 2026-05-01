@@ -110,7 +110,6 @@ export default function Index() {
       {activeTab === "louange" && <Louange />}
       {activeTab === "marketplace" && <Marketplace />}
       {activeTab === "profil" && <Profile />}
-
       <BottomTabs
         active={activeTab}
         onChange={handleTabChange}
