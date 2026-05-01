@@ -684,18 +684,18 @@ export default function Feed({ onTabChange }: FeedProps) {
         {/* Titre + bouton */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-gray-800">✨ Flash du jour</span>
+            <span className="text-sm font-bold text-foreground">✨ Flash du jour</span>
             {flashes.length > 0 && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white"
-                style={{ background: "linear-gradient(135deg, #f59e0b, #ef4444)" }}>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-primary-foreground"
+                style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--mirec-purple)))" }}>
                 {flashes.length}
               </span>
             )}
           </div>
           <button
             onClick={() => { if (!user) { navigate("/auth"); return; } setShowNewFlash(true); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white transition-all active:scale-95"
-            style={{ background: "linear-gradient(135deg, #f59e0b, #ef4444)", boxShadow: "0 2px 8px rgba(239,68,68,0.3)" }}>
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-primary-foreground transition-all active:scale-95"
+            style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--mirec-purple)))", boxShadow: "0 2px 8px hsl(var(--primary) / 0.3)" }}>
             ✨ Partager
           </button>
         </div>
@@ -703,18 +703,17 @@ export default function Feed({ onTabChange }: FeedProps) {
         {loadingFlashes ? (
           <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
             {[1, 2, 3].map(i => (
-              <div key={i} className="flex-shrink-0 rounded-2xl animate-pulse"
-                style={{ width: 100, height: 160, background: "rgba(0,0,0,0.06)" }} />
+              <div key={i} className="flex-shrink-0 rounded-2xl animate-pulse bg-muted"
+                style={{ width: 100, height: 160 }} />
             ))}
           </div>
         ) : flashes.length === 0 ? (
           /* État vide */
-          <div className="flex items-center gap-3 py-4 px-4 rounded-2xl"
-            style={{ background: "rgba(251,191,36,0.08)", border: "1.5px dashed rgba(251,191,36,0.4)" }}>
+          <div className="flex items-center gap-3 py-4 px-4 rounded-2xl bg-primary/10 border border-dashed border-primary/40">
             <span className="text-2xl">🙏</span>
             <div>
-              <p className="text-xs font-semibold text-gray-700">Aucun flash aujourd'hui</p>
-              <p className="text-[10px] text-gray-500 mt-0.5">Sois le premier à partager une victoire !</p>
+              <p className="text-xs font-semibold text-foreground">Aucun flash aujourd'hui</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Sois le premier à partager une victoire !</p>
             </div>
           </div>
         ) : (
