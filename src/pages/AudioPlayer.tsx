@@ -45,11 +45,11 @@ export default function AudioPlayer({ episode, onClose }) {
   // ... reste du lecteur (play/pause/seek/volume) identique à ton code existant
 
   return (
-    <div className="fixed bottom-20 left-0 right-0 z-50 ...">
-      <audio ref={audioRef} ... />
+    <div className="fixed bottom-20 left-0 right-0 z-50 bg-card border-t border-border p-3">
+      <audio ref={audioRef} />
       <div className="flex items-center gap-3">
         <button onClick={downloadOffline}><Download className="w-4 h-4" /></button>
-        {/* autres boutons */}
+        <button onClick={onClose}><X className="w-4 h-4" /></button>
       </div>
     </div>
   );
