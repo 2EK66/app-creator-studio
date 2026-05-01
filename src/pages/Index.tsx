@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { BottomTabs } from "@/components/mirec/BottomTabs";
-import Feed        from "@/pages/Feed";
-import Groups      from "@/pages/Groups";
-import Messages    from "@/pages/Messages";
-import Louange     from "@/pages/Louange";
+import Feed from "@/pages/Feed";
+import Groups from "@/pages/Groups";
+import Messages from "@/pages/Messages";
+import Louange from "@/pages/Louange";
 import Marketplace from "@/pages/Marketplace";
-import Profile     from "@/pages/Profile";
+import Profile from "@/pages/Profile";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -22,7 +22,7 @@ export default function Index() {
   const handleTabChange = (tab: string, state?: Record<string, any>) => {
     if (tab === "inbox" && state) {
       setInboxState(state as any);
-      setUnreadMessages(0); // remise à zéro optimiste
+      setUnreadMessages(0);
     } else {
       setInboxState({});
     }
@@ -46,36 +46,46 @@ export default function Index() {
 
     const channel = supabase
       .channel(`unread-index-${user.id}`)
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "direct_messages",
-        filter: `receiver_id=eq.${user.id}`,
-      }, (payload) => {
-        const msg = payload.new as any;
-        if (msg.is_read === false) setUnreadMessages(prev => prev + 1);
-      })
-      .on("postgres_changes", {
-        event: "UPDATE",
-        schema: "public",
-        table: "direct_messages",
-        filter: `receiver_id=eq.${user.id}`,
-      }, (payload) => {
-        const old     = payload.old as any;
-        const updated = payload.new as any;
-        if (old.is_read === false && updated.is_read === true) {
-          setUnreadMessages(prev => Math.max(0, prev - 1));
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "direct_messages",
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const msg = payload.new as any;
+          if (msg.is_read === false) setUnreadMessages((prev) => prev + 1);
         }
-      })
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "direct_messages",
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const old = payload.old as any;
+          const updated = payload.new as any;
+          if (old.is_read === false && updated.is_read === true) {
+            setUnreadMessages((prev) => Math.max(0, prev - 1));
+          }
+        }
+      )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
-  // Quand l'onglet Messages est ouvert, on re-fetch après que Messages ait marqué comme lus
+  // Re-fetch quand on ouvre l'onglet Messages (laisse le temps de marquer comme lus)
   useEffect(() => {
     if (activeTab !== "inbox" || !user) return;
-    const t = setTimeout(async () => {
+    const timeout = setTimeout(async () => {
       const { count } = await supabase
         .from("direct_messages")
         .select("*", { count: "exact", head: true })
@@ -83,23 +93,23 @@ export default function Index() {
         .eq("is_read", false);
       setUnreadMessages(count || 0);
     }, 1800);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timeout);
   }, [activeTab, user]);
 
   return (
     <div className="min-h-screen bg-background">
-      {activeTab === "feed"        && <Feed onTabChange={handleTabChange} />}
-      {activeTab === "groupes"     && <Groups />}
-      {activeTab === "inbox"       && (
+      {activeTab === "feed" && <Feed onTabChange={handleTabChange} />}
+      {activeTab === "groupes" && <Groups />}
+      {activeTab === "inbox" && (
         <Messages
           key={JSON.stringify(inboxState)}
           initialState={inboxState}
           onTabChange={handleTabChange}
         />
       )}
-      {activeTab === "louange"     && <Louange />}
+      {activeTab === "louange" && <Louange />}
       {activeTab === "marketplace" && <Marketplace />}
-      {activeTab === "profil"      && <Profile />}
+      {activeTab === "profil" && <Profile />}
 
       <BottomTabs
         active={activeTab}
