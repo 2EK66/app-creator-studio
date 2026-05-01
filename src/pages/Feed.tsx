@@ -641,16 +641,13 @@ export default function Feed({ onTabChange }: FeedProps) {
   const filteredPosts = filter === "all" ? posts : posts.filter(p => p.type === filter);
 
   return (
-    <div className="min-h-screen pb-20 relative" style={{
-      // ── FOND : blanc-crème avec touches chaleureuses ──
-      background: "linear-gradient(160deg, #fffbf0 0%, #fff8ee 30%, #fef3f2 60%, #fffdf5 100%)",
-    }}>
+    <div className="min-h-screen pb-20 relative bg-background">
 
       {/* Décoration douce en fond */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
-        <div style={{ position: "absolute", top: "-10%", right: "-5%", width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(251,191,36,0.12) 0%, transparent 70%)" }} />
-        <div style={{ position: "absolute", bottom: "20%", left: "-8%", width: 280, height: 280, borderRadius: "50%", background: "radial-gradient(circle, rgba(239,68,68,0.07) 0%, transparent 70%)" }} />
-        <div style={{ position: "absolute", top: "40%", right: "10%", width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(251,191,36,0.08) 0%, transparent 70%)" }} />
+        <div style={{ position: "absolute", top: "-10%", right: "-5%", width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, hsl(var(--primary) / 0.12) 0%, transparent 70%)" }} />
+        <div style={{ position: "absolute", bottom: "20%", left: "-8%", width: 280, height: 280, borderRadius: "50%", background: "radial-gradient(circle, hsl(var(--mirec-purple) / 0.07) 0%, transparent 70%)" }} />
+        <div style={{ position: "absolute", top: "40%", right: "10%", width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, hsl(var(--primary) / 0.08) 0%, transparent 70%)" }} />
       </div>
 
       {/* STYLES ANIMATIONS */}
@@ -660,23 +657,22 @@ export default function Feed({ onTabChange }: FeedProps) {
       `}</style>
 
       {/* ── HEADER ── */}
-      <header className="sticky top-0 z-30 border-b px-4 py-3 relative"
-        style={{ background: "rgba(255,251,240,0.92)", backdropFilter: "blur(20px)", borderColor: "rgba(251,191,36,0.2)" }}>
+      <header className="sticky top-0 z-30 border-b border-primary/20 px-4 py-3 relative bg-background/90 backdrop-blur-xl">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <MirecLogo size={36} />
             <div>
-              <h1 className="font-display text-xl font-bold tracking-wide text-gray-800 leading-none">MIREC</h1>
-              <p className="text-[9px] text-amber-600/70 font-medium tracking-wider uppercase">Communauté de foi</p>
+              <h1 className="font-display text-xl font-bold tracking-wide text-foreground leading-none">MIREC</h1>
+              <p className="text-[9px] text-primary/70 font-medium tracking-wider uppercase">Communauté de foi</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={() => fetchPosts(true)} disabled={refreshing} className="p-2 rounded-full hover:bg-amber-50 transition-colors">
-              <RefreshCw className={`w-5 h-5 text-gray-500 ${refreshing ? "animate-spin" : ""}`} />
+            <button onClick={() => fetchPosts(true)} disabled={refreshing} className="p-2 rounded-full hover:bg-primary/10 transition-colors">
+              <RefreshCw className={`w-5 h-5 text-muted-foreground ${refreshing ? "animate-spin" : ""}`} />
             </button>
-            <button className="relative p-2 rounded-full hover:bg-amber-50 transition-colors">
-              <Bell className="w-5 h-5 text-gray-500" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white" />
+            <button className="relative p-2 rounded-full hover:bg-primary/10 transition-colors">
+              <Bell className="w-5 h-5 text-muted-foreground" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full border border-card" />
             </button>
           </div>
         </div>
