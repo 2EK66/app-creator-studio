@@ -6,26 +6,28 @@
 
 @layer base {
   :root {
-    --background: 220 33% 97%;
-    --foreground: 222 47% 15%;
+    /* Fond crème chaleureux du Feed */
+    --background: 42 100% 97%;
+    --foreground: 25 30% 18%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 15%;
+    --card-foreground: 25 30% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 15%;
+    --popover-foreground: 25 30% 18%;
 
-    --primary: 220 70% 35%;
+    /* Ambre/doré — couleur principale (#f59e0b) */
+    --primary: 38 92% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 60% 95%;
-    --secondary-foreground: 220 70% 35%;
+    --secondary: 42 90% 94%;
+    --secondary-foreground: 30 80% 35%;
 
-    --muted: 220 20% 94%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 40 30% 93%;
+    --muted-foreground: 30 10% 40%;
 
-    --accent: 220 60% 95%;
-    --accent-foreground: 220 70% 35%;
+    --accent: 42 90% 94%;
+    --accent-foreground: 30 80% 35%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -33,54 +35,65 @@
     --success: 160 84% 29%;
     --success-foreground: 0 0% 100%;
 
-    --mirec-blue-900: 220 75% 24%;
-    --mirec-blue-800: 220 70% 35%;
-    --mirec-blue-700: 220 65% 43%;
-    --mirec-blue-500: 216 58% 56%;
-    --mirec-blue-200: 213 82% 82%;
-    --mirec-blue-100: 215 85% 91%;
-    --mirec-blue-50: 214 70% 96%;
+    /* Palette ambre/doré (réutilise les noms 'mirec-*' historiques) */
+    --mirec-blue-900: 25 80% 22%;     /* brun ambre foncé */
+    --mirec-blue-800: 30 85% 35%;     /* doré profond */
+    --mirec-blue-700: 35 90% 45%;
+    --mirec-blue-500: 38 92% 55%;     /* ambre vif */
+    --mirec-blue-200: 42 95% 80%;
+    --mirec-blue-100: 44 95% 90%;
+    --mirec-blue-50:  44 100% 96%;
 
-    --mirec-purple: 263 70% 50%;
-    --mirec-amber: 37 85% 43%;
-    --mirec-green: 160 84% 29%;
+    --mirec-purple: 0 75% 55%;        /* rouge chaleureux */
+    --mirec-amber: 38 92% 50%;
+    --mirec-green: 160 84% 35%;
 
-    --border: 220 20% 90%;
-    --input: 220 20% 90%;
-    --ring: 220 70% 35%;
+    --border: 38 40% 88%;
+    --input: 38 40% 88%;
+    --ring: 38 92% 50%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-primary: 38 92% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 42 90% 94%;
+    --sidebar-accent-foreground: 30 80% 35%;
+    --sidebar-border: 38 40% 88%;
+    --sidebar-ring: 38 92% 50%;
   }
 
   .dark {
-    --background: 222 47% 8%;
-    --foreground: 210 40% 95%;
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 95%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 95%;
-    --primary: 213 82% 65%;
-    --primary-foreground: 222 47% 8%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 95%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 95%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 95%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 213 27% 84%;
+    /* Mode sombre — fond noir chaud avec accents dorés */
+    --background: 25 20% 8%;
+    --foreground: 42 30% 92%;
+    --card: 25 20% 12%;
+    --card-foreground: 42 30% 92%;
+    --popover: 25 20% 12%;
+    --popover-foreground: 42 30% 92%;
+    --primary: 42 95% 60%;
+    --primary-foreground: 25 30% 12%;
+    --secondary: 25 15% 18%;
+    --secondary-foreground: 42 30% 92%;
+    --muted: 25 15% 18%;
+    --muted-foreground: 38 15% 65%;
+    --accent: 25 15% 20%;
+    --accent-foreground: 42 95% 70%;
+    --destructive: 0 63% 45%;
+    --destructive-foreground: 42 30% 92%;
+
+    --mirec-blue-900: 42 30% 92%;
+    --mirec-blue-800: 42 95% 65%;
+    --mirec-blue-700: 38 92% 55%;
+    --mirec-blue-500: 38 90% 60%;
+    --mirec-blue-200: 38 50% 35%;
+    --mirec-blue-100: 25 20% 22%;
+    --mirec-blue-50:  25 20% 16%;
+
+    --border: 25 15% 22%;
+    --input: 25 15% 22%;
+    --ring: 42 95% 60%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
