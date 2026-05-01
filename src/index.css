@@ -6,26 +6,28 @@
 
 @layer base {
   :root {
-    --background: 220 33% 97%;
-    --foreground: 222 47% 15%;
+    /* Fond crème chaleureux du Feed */
+    --background: 42 100% 97%;
+    --foreground: 25 30% 18%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 15%;
+    --card-foreground: 25 30% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 15%;
+    --popover-foreground: 25 30% 18%;
 
-    --primary: 220 70% 35%;
+    /* Ambre/doré — couleur principale (#f59e0b) */
+    --primary: 38 92% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 60% 95%;
-    --secondary-foreground: 220 70% 35%;
+    --secondary: 42 90% 94%;
+    --secondary-foreground: 30 80% 35%;
 
-    --muted: 220 20% 94%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 40 30% 93%;
+    --muted-foreground: 30 10% 40%;
 
-    --accent: 220 60% 95%;
-    --accent-foreground: 220 70% 35%;
+    --accent: 42 90% 94%;
+    --accent-foreground: 30 80% 35%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
