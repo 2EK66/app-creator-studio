@@ -723,17 +723,13 @@ export default function Feed({ onTabChange }: FeedProps) {
             {/* Bouton + Ajouter ton flash */}
             <button
               onClick={() => { if (!user) { navigate("/auth"); return; } setShowNewFlash(true); }}
-              className="flex-shrink-0 relative overflow-hidden flex flex-col items-center justify-center gap-2 border-2 border-dashed transition-all active:scale-95"
-              style={{
-                width: 100, height: 160, borderRadius: 14,
-                borderColor: "rgba(245,158,11,0.5)",
-                background: "linear-gradient(160deg, rgba(251,191,36,0.08), rgba(239,68,68,0.06))",
-              }}>
+              className="flex-shrink-0 relative overflow-hidden flex flex-col items-center justify-center gap-2 border-2 border-dashed border-primary/50 transition-all active:scale-95 bg-primary/5"
+              style={{ width: 100, height: 160, borderRadius: 14 }}>
               <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, #f59e0b, #ef4444)" }}>
-                <Plus className="w-5 h-5 text-white" />
+                style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--mirec-purple)))" }}>
+                <Plus className="w-5 h-5 text-primary-foreground" />
               </div>
-              <p className="text-[10px] font-semibold text-center text-amber-700 px-2 leading-tight">Ajouter un flash</p>
+              <p className="text-[10px] font-semibold text-center text-primary px-2 leading-tight">Ajouter un flash</p>
             </button>
 
             {/* Flash Cards */}
@@ -745,18 +741,15 @@ export default function Feed({ onTabChange }: FeedProps) {
       </div>
 
       {/* ── FILTRES ── */}
-      <div className="sticky top-[61px] z-20 border-b px-4 py-2.5 relative"
-        style={{ background: "rgba(255,251,240,0.92)", backdropFilter: "blur(16px)", borderColor: "rgba(251,191,36,0.15)" }}>
+      <div className="sticky top-[61px] z-20 border-b border-primary/15 px-4 py-2.5 relative bg-background/90 backdrop-blur-xl">
         <div className="max-w-lg mx-auto flex gap-2 overflow-x-auto no-scrollbar">
           {filters.map(f => (
             <button key={f.key} onClick={() => setFilter(f.key)}
-              className="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
-              style={filter === f.key ? {
-                background: "linear-gradient(135deg, #1A4B9B, #7C3AED)", color: "#fff",
-                boxShadow: "0 2px 8px rgba(26,75,155,0.3)",
-              } : {
-                background: "rgba(0,0,0,0.06)", color: "#374151",
-              }}>
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                filter === f.key
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "bg-muted text-muted-foreground hover:bg-muted/70"
+              }`}>
               {f.label}
             </button>
           ))}
