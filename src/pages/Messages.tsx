@@ -153,6 +153,15 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
   const [allMembers, setAllMembers]         = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
+  // ---- Enregistrement vocal ----
+  const MAX_VOICE_SEC = 180; // 3 minutes
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordChunksRef  = useRef<Blob[]>([]);
+  const recordTimerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordCancelledRef = useRef(false);
+  const [recording, setRecording] = useState(false);
+  const [recordSec, setRecordSec] = useState(0);
+
   // ---- Utilitaire avatar ----
   const getAvatarUrl = (path: string | null): string | null => {
     if (!path) return null;
