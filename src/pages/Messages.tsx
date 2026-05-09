@@ -281,7 +281,7 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
       const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
         : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
-      const mr = new MediaRecorder(stream, { mimeType: mime });
+      const mr: MediaRecorder = new (window as any).MediaRecorder(stream, { mimeType: mime });
       recordChunksRef.current = [];
       recordCancelledRef.current = false;
       mr.ondataavailable = (e) => { if (e.data.size > 0) recordChunksRef.current.push(e.data); };
