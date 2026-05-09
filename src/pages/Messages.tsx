@@ -5,7 +5,8 @@ import { MirecLogo } from "@/components/mirec/MirecLogo";
 import { MirecAvatar } from "@/components/mirec/Avatar";
 import {
   MessageCircle, ArrowLeft, Send, Search, X,
-  Check, CheckCheck, Paperclip, File, Download, Users
+  Check, CheckCheck, Paperclip, File as FileIcon, Download, Users,
+  Mic, Trash2, Play, Pause
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -152,6 +153,15 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
   const [allMembers, setAllMembers]         = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
+  // ---- Enregistrement vocal ----
+  const MAX_VOICE_SEC = 180; // 3 minutes
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordChunksRef  = useRef<Blob[]>([]);
+  const recordTimerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordCancelledRef = useRef(false);
+  const [recording, setRecording] = useState(false);
+  const [recordSec, setRecordSec] = useState(0);
+
   // ---- Utilitaire avatar ----
   const getAvatarUrl = (path: string | null): string | null => {
     if (!path) return null;
@@ -231,7 +241,7 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
     setSending(true);
     const tempMsg: DirectMessage = {
       id: `temp-${Date.now()}`,
-      content: newMessage.trim() || (attachment?.type === 'image' ? '📷 Image' : '📎 Fichier'),
+      content: newMessage.trim() || (attachment?.type === 'image' ? '📷 Image' : attachment?.type === 'audio' ? '🎤 Message vocal' : '📎 Fichier'),
       created_at: new Date().toISOString(),
       sender_id: user.id,
       receiver_id: activePartner.id,
@@ -261,6 +271,68 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
     if (attachment) await sendDM(attachment);
     if (fileInputRef.current) fileInputRef.current.value = '';
     setUploading(false);
+  };
+
+  // ---- Vocal: démarrer / arrêter / annuler ----
+  const startRecording = async () => {
+    if (recording || !user || !activePartner) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
+      const mr: MediaRecorder = new (window as any).MediaRecorder(stream, { mimeType: mime });
+      recordChunksRef.current = [];
+      recordCancelledRef.current = false;
+      mr.ondataavailable = (e) => { if (e.data.size > 0) recordChunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        if (recordTimerRef.current) clearInterval(recordTimerRef.current);
+        const wasCancelled = recordCancelledRef.current;
+        const chunks = recordChunksRef.current;
+        setRecording(false);
+        setRecordSec(0);
+        if (wasCancelled || chunks.length === 0) return;
+        const blob = new Blob(chunks, { type: mime });
+        const ext = mime.includes("mp4") ? "m4a" : "webm";
+        const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: mime });
+        setUploading(true);
+        const filePath = `${user.id}/${activePartner.id}/voice-${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from('message_attachments').upload(filePath, file, { contentType: mime });
+        if (upErr) { alert("Erreur lors de l'envoi du vocal"); setUploading(false); return; }
+        const { data: urlData } = supabase.storage.from('message_attachments').getPublicUrl(filePath);
+        await sendDM({ url: urlData.publicUrl, type: 'audio' });
+        setUploading(false);
+      };
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setRecording(true);
+      setRecordSec(0);
+      recordTimerRef.current = setInterval(() => {
+        setRecordSec(prev => {
+          if (prev + 1 >= MAX_VOICE_SEC) {
+            try { mediaRecorderRef.current?.stop(); } catch {}
+            return prev + 1;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } catch (err) {
+      console.error("micro:", err);
+      alert("Impossible d'accéder au micro. Autorise l'accès dans ton navigateur.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (!recording) return;
+    recordCancelledRef.current = false;
+    try { mediaRecorderRef.current?.stop(); } catch {}
+  };
+
+  const cancelRecording = () => {
+    if (!recording) return;
+    recordCancelledRef.current = true;
+    try { mediaRecorderRef.current?.stop(); } catch {}
   };
 
   // ---- Marquer comme lu ----
@@ -504,12 +576,22 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
                       {msg.attachment_url && msg.attachment_type === 'file' && (
                         <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer"
                           className="flex items-center gap-2 text-sm bg-black/10 rounded-lg px-3 py-2 mb-1 no-underline">
-                          <File className="w-4 h-4 flex-shrink-0" />
+                          <FileIcon className="w-4 h-4 flex-shrink-0" />
                           <span className="truncate">Fichier joint</span>
                           <Download className="w-3 h-3 flex-shrink-0" />
                         </a>
                       )}
-                      {msg.content && <p className="text-sm leading-relaxed break-words">{msg.content}</p>}
+                      {msg.attachment_url && msg.attachment_type === 'audio' && (
+                        <audio
+                          controls
+                          src={msg.attachment_url}
+                          className="block max-w-[240px] h-10"
+                          style={{ filter: isMe ? "invert(1) hue-rotate(180deg)" : undefined }}
+                        />
+                      )}
+                      {msg.content && msg.attachment_type !== 'audio' && (
+                        <p className="text-sm leading-relaxed break-words">{msg.content}</p>
+                      )}
                     </div>
 
                     {isMe && (
@@ -541,28 +623,60 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
           <div className="max-w-lg mx-auto flex gap-2 items-center">
             <input type="file" ref={fileInputRef} onChange={handleFileSelect}
               accept="image/*,application/pdf,.doc,.docx,.txt,.mp3,.mp4" className="hidden" />
-            <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
-              className="flex-shrink-0 w-10 h-10 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 flex items-center justify-center transition-colors disabled:opacity-50">
-              {uploading
-                ? <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                : <Paperclip className="w-4 h-4" />
-              }
-            </button>
-            <input
-              value={newMessage}
-              onChange={handleInputChange}
-              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendDM(); } }}
-              placeholder={`Message à ${activePartner.name}...`}
-              className="flex-1 px-4 py-2.5 rounded-full border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
-            />
-            <button onClick={() => sendDM()} disabled={(!newMessage.trim() && !uploading) || sending}
-              className="w-10 h-10 rounded-full text-white flex items-center justify-center transition-colors disabled:opacity-50 flex-shrink-0"
-              style={{ background: "linear-gradient(135deg, #1A4B9B, #7C3AED)", boxShadow: "0 2px 8px rgba(26,75,155,0.4)" }}>
-              {sending
-                ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                : <Send className="w-4 h-4" />
-              }
-            </button>
+
+            {recording ? (
+              <div className="flex-1 flex items-center gap-3 px-4 py-2.5 rounded-full bg-destructive/10 border border-destructive/30">
+                <button onClick={cancelRecording}
+                  className="w-8 h-8 rounded-full bg-destructive/20 hover:bg-destructive/30 flex items-center justify-center flex-shrink-0">
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </button>
+                <div className="flex items-center gap-2 flex-1">
+                  <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
+                  <span className="text-sm font-mono font-semibold text-foreground">
+                    {Math.floor(recordSec / 60)}:{(recordSec % 60).toString().padStart(2, "0")}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    / {Math.floor(MAX_VOICE_SEC / 60)}:00
+                  </span>
+                </div>
+                <button onClick={stopRecording}
+                  className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 shadow-md">
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                  className="flex-shrink-0 w-10 h-10 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 flex items-center justify-center transition-colors disabled:opacity-50">
+                  {uploading
+                    ? <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    : <Paperclip className="w-4 h-4" />
+                  }
+                </button>
+                <input
+                  value={newMessage}
+                  onChange={handleInputChange}
+                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendDM(); } }}
+                  placeholder={`Message à ${activePartner.name}...`}
+                  className="flex-1 px-4 py-2.5 rounded-full border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                {newMessage.trim() ? (
+                  <button onClick={() => sendDM()} disabled={sending}
+                    className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center transition-colors disabled:opacity-50 flex-shrink-0 shadow-md">
+                    {sending
+                      ? <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                      : <Send className="w-4 h-4" />
+                    }
+                  </button>
+                ) : (
+                  <button onClick={startRecording} disabled={uploading}
+                    title="Enregistrer un message vocal"
+                    className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center transition-all hover:scale-105 disabled:opacity-50 flex-shrink-0 shadow-md">
+                    <Mic className="w-4 h-4" />
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
 
