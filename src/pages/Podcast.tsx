@@ -153,14 +153,35 @@ function AudioPlayer({ episode, onClose }: { episode: Episode; onClose: () => vo
   const [current, setCurrent] = useState(episode.progress_sec || 0);
   const [duration, setDuration] = useState(episode.duration_sec || 0);
   const [expanded, setExpanded] = useState(false);
+  const [speed, setSpeed] = useState(1);
 
   useEffect(() => {
     if (!audioRef.current || !episode.audio_url) return;
     audioRef.current.src = episode.audio_url;
     audioRef.current.currentTime = episode.progress_sec || 0;
+    audioRef.current.playbackRate = speed;
     setCurrent(episode.progress_sec || 0);
     setPlaying(false);
   }, [episode.id]);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.playbackRate = speed;
+  }, [speed]);
+
+  const cycleSpeed = () => {
+    const speeds = [1, 1.25, 1.5, 1.75, 2];
+    const idx = speeds.indexOf(speed);
+    setSpeed(speeds[(idx + 1) % speeds.length]);
+  };
+
+  const share = async () => {
+    const url = episode.audio_url || window.location.href;
+    if ((navigator as any).share) {
+      try { await (navigator as any).share({ title: episode.title, text: episode.channel_name, url }); } catch {}
+    } else {
+      try { await navigator.clipboard.writeText(url); alert("Lien copié 📋"); } catch {}
+    }
+  };
 
   const togglePlay = () => {
     if (!audioRef.current) return;
