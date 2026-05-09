@@ -6,7 +6,7 @@ import {
   Radio, Mic2, ChevronRight, Check, X,
   Play, Pause, ArrowLeft, SkipBack, SkipForward,
   Bell, BellOff, Lock, Video, Youtube,
-  Eye, Send, MessageCircle, Wifi, WifiOff
+  Eye, Send, MessageCircle, Wifi, WifiOff, Search
 } from "lucide-react";
 
 // ================================================================
