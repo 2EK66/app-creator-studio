@@ -1129,6 +1129,8 @@ export default function Podcast() {
   const [showForm, setShowForm] = useState(false);
   const [showStartLive, setShowStartLive] = useState(false);
   const [activeTab, setActiveTab] = useState<"discover" | "lives" | "subscriptions">("discover");
+  const [searchQ, setSearchQ] = useState("");
+  const [filterCat, setFilterCat] = useState<string>("all");
   const [recentEpisodes, setRecentEpisodes] = useState<Episode[]>([]);
   const [requestStatus, setRequestStatus] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
