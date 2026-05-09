@@ -623,10 +623,6 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
           <div className="max-w-lg mx-auto flex gap-2 items-center">
             <input type="file" ref={fileInputRef} onChange={handleFileSelect}
               accept="image/*,application/pdf,.doc,.docx,.txt,.mp3,.mp4" className="hidden" />
-        <div className="sticky bottom-20 bg-card border-t border-border/50 px-4 py-3">
-          <div className="max-w-lg mx-auto flex gap-2 items-center">
-            <input type="file" ref={fileInputRef} onChange={handleFileSelect}
-              accept="image/*,application/pdf,.doc,.docx,.txt,.mp3,.mp4" className="hidden" />
 
             {recording ? (
               <div className="flex-1 flex items-center gap-3 px-4 py-2.5 rounded-full bg-destructive/10 border border-destructive/30">
