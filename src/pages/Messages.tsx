@@ -576,7 +576,7 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
                       {msg.attachment_url && msg.attachment_type === 'file' && (
                         <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer"
                           className="flex items-center gap-2 text-sm bg-black/10 rounded-lg px-3 py-2 mb-1 no-underline">
-                          <File className="w-4 h-4 flex-shrink-0" />
+                          <FileIcon className="w-4 h-4 flex-shrink-0" />
                           <span className="truncate">Fichier joint</span>
                           <Download className="w-3 h-3 flex-shrink-0" />
                         </a>
