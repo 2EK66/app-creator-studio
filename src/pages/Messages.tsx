@@ -581,7 +581,17 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
                           <Download className="w-3 h-3 flex-shrink-0" />
                         </a>
                       )}
-                      {msg.content && <p className="text-sm leading-relaxed break-words">{msg.content}</p>}
+                      {msg.attachment_url && msg.attachment_type === 'audio' && (
+                        <audio
+                          controls
+                          src={msg.attachment_url}
+                          className="block max-w-[240px] h-10"
+                          style={{ filter: isMe ? "invert(1) hue-rotate(180deg)" : undefined }}
+                        />
+                      )}
+                      {msg.content && msg.attachment_type !== 'audio' && (
+                        <p className="text-sm leading-relaxed break-words">{msg.content}</p>
+                      )}
                     </div>
 
                     {isMe && (
