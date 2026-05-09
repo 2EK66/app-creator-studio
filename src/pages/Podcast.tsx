@@ -338,6 +338,18 @@ function AudioPlayer({ episode, onClose }: { episode: Episode; onClose: () => vo
                 <span className="text-[9px] text-white/30">+30s</span>
               </button>
             </div>
+            <div className="flex items-center gap-3 mt-2">
+              <button onClick={cycleSpeed}
+                className="px-3 py-1.5 rounded-full text-xs font-bold text-white"
+                style={{ background: "rgba(245,158,11,0.18)", border: "1px solid rgba(245,158,11,0.45)" }}>
+                {speed}x
+              </button>
+              <button onClick={share}
+                className="px-3 py-1.5 rounded-full text-xs font-semibold text-white/80 hover:text-white"
+                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+                Partager
+              </button>
+            </div>
           </div>
         </div>
       )}
