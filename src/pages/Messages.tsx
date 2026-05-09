@@ -5,7 +5,7 @@ import { MirecLogo } from "@/components/mirec/MirecLogo";
 import { MirecAvatar } from "@/components/mirec/Avatar";
 import {
   MessageCircle, ArrowLeft, Send, Search, X,
-  Check, CheckCheck, Paperclip, File, Download, Users,
+  Check, CheckCheck, Paperclip, File as FileIcon, Download, Users,
   Mic, Trash2, Play, Pause
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
