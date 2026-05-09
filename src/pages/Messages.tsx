@@ -273,6 +273,68 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
     setUploading(false);
   };
 
+  // ---- Vocal: démarrer / arrêter / annuler ----
+  const startRecording = async () => {
+    if (recording || !user || !activePartner) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
+      const mr = new MediaRecorder(stream, { mimeType: mime });
+      recordChunksRef.current = [];
+      recordCancelledRef.current = false;
+      mr.ondataavailable = (e) => { if (e.data.size > 0) recordChunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        if (recordTimerRef.current) clearInterval(recordTimerRef.current);
+        const wasCancelled = recordCancelledRef.current;
+        const chunks = recordChunksRef.current;
+        setRecording(false);
+        setRecordSec(0);
+        if (wasCancelled || chunks.length === 0) return;
+        const blob = new Blob(chunks, { type: mime });
+        const ext = mime.includes("mp4") ? "m4a" : "webm";
+        const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: mime });
+        setUploading(true);
+        const filePath = `${user.id}/${activePartner.id}/voice-${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from('message_attachments').upload(filePath, file, { contentType: mime });
+        if (upErr) { alert("Erreur lors de l'envoi du vocal"); setUploading(false); return; }
+        const { data: urlData } = supabase.storage.from('message_attachments').getPublicUrl(filePath);
+        await sendDM({ url: urlData.publicUrl, type: 'audio' });
+        setUploading(false);
+      };
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setRecording(true);
+      setRecordSec(0);
+      recordTimerRef.current = setInterval(() => {
+        setRecordSec(prev => {
+          if (prev + 1 >= MAX_VOICE_SEC) {
+            try { mediaRecorderRef.current?.stop(); } catch {}
+            return prev + 1;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } catch (err) {
+      console.error("micro:", err);
+      alert("Impossible d'accéder au micro. Autorise l'accès dans ton navigateur.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (!recording) return;
+    recordCancelledRef.current = false;
+    try { mediaRecorderRef.current?.stop(); } catch {}
+  };
+
+  const cancelRecording = () => {
+    if (!recording) return;
+    recordCancelledRef.current = true;
+    try { mediaRecorderRef.current?.stop(); } catch {}
+  };
+
   // ---- Marquer comme lu ----
   const markAsRead = useCallback(async (partnerId: string) => {
     if (!user) return;
