@@ -241,7 +241,7 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
     setSending(true);
     const tempMsg: DirectMessage = {
       id: `temp-${Date.now()}`,
-      content: newMessage.trim() || (attachment?.type === 'image' ? '📷 Image' : '📎 Fichier'),
+      content: newMessage.trim() || (attachment?.type === 'image' ? '📷 Image' : attachment?.type === 'audio' ? '🎤 Message vocal' : '📎 Fichier'),
       created_at: new Date().toISOString(),
       sender_id: user.id,
       receiver_id: activePartner.id,
