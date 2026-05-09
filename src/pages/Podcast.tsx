@@ -1317,6 +1317,30 @@ export default function Podcast() {
         {/* ===== DÉCOUVRIR ===== */}
         {activeTab === "discover" && (
           <>
+            {/* Recherche + filtres catégorie */}
+            <div className="mb-4 space-y-2">
+              <div className="relative">
+                <Search className="w-4 h-4 text-white/40 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  value={searchQ}
+                  onChange={e => setSearchQ(e.target.value)}
+                  placeholder="Rechercher un canal..."
+                  className="w-full pl-9 pr-4 py-2.5 rounded-full text-sm text-white outline-none"
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(245,158,11,0.25)" }}
+                />
+              </div>
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                {[{ k: "all", l: "Tout", e: "✨" }, ...Object.entries(CAT).map(([k, v]) => ({ k, l: v.label, e: v.emoji }))].map(c => (
+                  <button key={c.k} onClick={() => setFilterCat(c.k)}
+                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all ${filterCat === c.k ? "text-white" : "text-white/50"}`}
+                    style={filterCat === c.k
+                      ? { background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 2px 8px rgba(245,158,11,0.4)" }
+                      : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    {c.e} {c.l}
+                  </button>
+                ))}
+              </div>
+            </div>
             {lives.length > 0 && (
               <div className="mb-6">
                 <p className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -1327,7 +1351,7 @@ export default function Podcast() {
                 </div>
               </div>
             )}
-            {recentEpisodes.length > 0 && (
+            {recentEpisodes.length > 0 && filterCat === "all" && !searchQ && (
               <div className="mb-6">
                 <p className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Récemment ajoutés</p>
                 <div className="space-y-2">
@@ -1344,34 +1368,31 @@ export default function Podcast() {
               </div>
             ) : channels.length === 0 ? (
               <div className="flex flex-col items-center py-16 text-center px-4">
-                <div
-                  className="w-24 h-24 rounded-3xl flex items-center justify-center mb-5"
-                  style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)" }}
-                >
+                <div className="w-24 h-24 rounded-3xl flex items-center justify-center mb-5"
+                  style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)" }}>
                   <Radio className="w-12 h-12 text-amber-400" />
                 </div>
-                <div
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-full mb-4"
-                  style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)" }}
-                >
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full mb-4"
+                  style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)" }}>
                   <Lock className="w-3 h-3 text-amber-400" />
                   <span className="text-[11px] font-semibold text-amber-300">Bientôt disponible</span>
                 </div>
                 <h3 className="font-bold text-lg text-white mb-2">Aucun canal pour l'instant</h3>
                 <p className="text-sm text-white/40 leading-relaxed mb-6">Les enseignements arrivent bientôt sur MIREC.</p>
                 {user && !requestStatus && (
-                  <button
-                    onClick={() => setShowForm(true)}
+                  <button onClick={() => setShowForm(true)}
                     className="px-6 py-3 rounded-xl font-bold text-sm text-white flex items-center gap-2"
-                    style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 4px 20px rgba(245,158,11,0.4)" }}
-                  >
+                    style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 4px 20px rgba(245,158,11,0.4)" }}>
                     <Mic2 className="w-4 h-4" /> Devenir le premier créateur
                   </button>
                 )}
               </div>
             ) : (
               <div className="space-y-3">
-                {channels.map((ch: any) => {
+                {channels
+                  .filter((ch: any) => filterCat === "all" || ch.category === filterCat)
+                  .filter((ch: any) => !searchQ || (ch.name + " " + (ch.description || "")).toLowerCase().includes(searchQ.toLowerCase()))
+                  .map((ch: any) => {
                   const c = cat(ch.category);
                   return (
                     <button
