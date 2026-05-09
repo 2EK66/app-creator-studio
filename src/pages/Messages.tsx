@@ -623,28 +623,64 @@ export default function Messages({ initialState = {}, onTabChange }: MessagesPro
           <div className="max-w-lg mx-auto flex gap-2 items-center">
             <input type="file" ref={fileInputRef} onChange={handleFileSelect}
               accept="image/*,application/pdf,.doc,.docx,.txt,.mp3,.mp4" className="hidden" />
-            <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
-              className="flex-shrink-0 w-10 h-10 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 flex items-center justify-center transition-colors disabled:opacity-50">
-              {uploading
-                ? <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                : <Paperclip className="w-4 h-4" />
-              }
-            </button>
-            <input
-              value={newMessage}
-              onChange={handleInputChange}
-              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendDM(); } }}
-              placeholder={`Message à ${activePartner.name}...`}
-              className="flex-1 px-4 py-2.5 rounded-full border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
-            />
-            <button onClick={() => sendDM()} disabled={(!newMessage.trim() && !uploading) || sending}
-              className="w-10 h-10 rounded-full text-white flex items-center justify-center transition-colors disabled:opacity-50 flex-shrink-0"
-              style={{ background: "linear-gradient(135deg, #1A4B9B, #7C3AED)", boxShadow: "0 2px 8px rgba(26,75,155,0.4)" }}>
-              {sending
-                ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                : <Send className="w-4 h-4" />
-              }
-            </button>
+        <div className="sticky bottom-20 bg-card border-t border-border/50 px-4 py-3">
+          <div className="max-w-lg mx-auto flex gap-2 items-center">
+            <input type="file" ref={fileInputRef} onChange={handleFileSelect}
+              accept="image/*,application/pdf,.doc,.docx,.txt,.mp3,.mp4" className="hidden" />
+
+            {recording ? (
+              <div className="flex-1 flex items-center gap-3 px-4 py-2.5 rounded-full bg-destructive/10 border border-destructive/30">
+                <button onClick={cancelRecording}
+                  className="w-8 h-8 rounded-full bg-destructive/20 hover:bg-destructive/30 flex items-center justify-center flex-shrink-0">
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </button>
+                <div className="flex items-center gap-2 flex-1">
+                  <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
+                  <span className="text-sm font-mono font-semibold text-foreground">
+                    {Math.floor(recordSec / 60)}:{(recordSec % 60).toString().padStart(2, "0")}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    / {Math.floor(MAX_VOICE_SEC / 60)}:00
+                  </span>
+                </div>
+                <button onClick={stopRecording}
+                  className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 shadow-md">
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                  className="flex-shrink-0 w-10 h-10 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 flex items-center justify-center transition-colors disabled:opacity-50">
+                  {uploading
+                    ? <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    : <Paperclip className="w-4 h-4" />
+                  }
+                </button>
+                <input
+                  value={newMessage}
+                  onChange={handleInputChange}
+                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendDM(); } }}
+                  placeholder={`Message à ${activePartner.name}...`}
+                  className="flex-1 px-4 py-2.5 rounded-full border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                {newMessage.trim() ? (
+                  <button onClick={() => sendDM()} disabled={sending}
+                    className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center transition-colors disabled:opacity-50 flex-shrink-0 shadow-md">
+                    {sending
+                      ? <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                      : <Send className="w-4 h-4" />
+                    }
+                  </button>
+                ) : (
+                  <button onClick={startRecording} disabled={uploading}
+                    title="Enregistrer un message vocal"
+                    className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center transition-all hover:scale-105 disabled:opacity-50 flex-shrink-0 shadow-md">
+                    <Mic className="w-4 h-4" />
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
 
