@@ -96,7 +96,7 @@ function extractYouTubeId(url: string): string | null {
 
 const CAT: Record<string, { label: string; emoji: string; color: string }> = {
   enseignement: { label: "Enseignement", emoji: "📖", color: "#1A4B9B" },
-  predication: { label: "Prédication", emoji: "⛪", color: "#7C3AED" },
+  predication: { label: "Prédication", emoji: "⛪", color: "#f59e0b" },
   radio: { label: "Radio", emoji: "📻", color: "#059669" },
   jeunesse: { label: "Jeunesse", emoji: "🔥", color: "#D97706" },
   autre: { label: "Autre", emoji: "✨", color: "#6B7280" },
@@ -128,7 +128,7 @@ function MediaBadge({ type }: { type?: string }) {
     return (
       <span
         className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-        style={{ background: "rgba(124,58,237,0.2)", color: "#a78bfa" }}
+        style={{ background: "rgba(245,158,11,0.2)", color: "#fbbf24" }}
       >
         <Video className="w-2.5 h-2.5" /> Vidéo
       </span>
@@ -197,21 +197,21 @@ function AudioPlayer({ episode, onClose }: { episode: Episode; onClose: () => vo
             className="rounded-2xl overflow-hidden shadow-2xl"
             style={{
               background: "linear-gradient(135deg,#0d0820ee,#1a0838ee)",
-              border: "1px solid rgba(139,92,246,0.4)",
+              border: "1px solid rgba(245,158,11,0.4)",
               backdropFilter: "blur(20px)"
             }}
           >
             <div className="h-0.5" style={{ background: "rgba(255,255,255,0.1)" }}>
               <div
                 className="h-full transition-all"
-                style={{ width: `${pct}%`, background: "linear-gradient(90deg,#7C3AED,#a78bfa)" }}
+                style={{ width: `${pct}%`, background: "linear-gradient(90deg,#f59e0b,#fbbf24)" }}
               />
             </div>
             <div className="flex items-center gap-3 px-4 py-3">
               <button
                 onClick={() => setExpanded(true)}
                 className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden"
-                style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)" }}
+                style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}
               >
                 {episode.cover_url ? (
                   <img src={episode.cover_url} alt="" className="w-full h-full object-cover" />
@@ -230,7 +230,7 @@ function AudioPlayer({ episode, onClose }: { episode: Episode; onClose: () => vo
                 <button
                   onClick={togglePlay}
                   className="w-9 h-9 rounded-full flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)" }}
+                  style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}
                 >
                   {playing ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white ml-0.5" />}
                 </button>
@@ -260,14 +260,14 @@ function AudioPlayer({ episode, onClose }: { episode: Episode; onClose: () => vo
           <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6">
             <div
               className="w-56 h-56 rounded-3xl overflow-hidden shadow-2xl"
-              style={{ boxShadow: "0 20px 60px rgba(124,58,237,0.5)" }}
+              style={{ boxShadow: "0 20px 60px rgba(245,158,11,0.5)" }}
             >
               {episode.cover_url ? (
                 <img src={episode.cover_url} alt="" className="w-full h-full object-cover" />
               ) : (
                 <div
                   className="w-full h-full flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)" }}
+                  style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}
                 >
                   <Radio className="w-20 h-20 text-white/60" />
                 </div>
@@ -277,7 +277,7 @@ function AudioPlayer({ episode, onClose }: { episode: Episode; onClose: () => vo
               <h2 className="font-bold text-xl text-white mb-1">{episode.title}</h2>
               <p className="text-sm text-white/50">{episode.channel_name}</p>
               {episode.serie && (
-                <p className="text-xs text-purple-400 mt-1">
+                <p className="text-xs text-amber-400 mt-1">
                   📚 {episode.serie} · Ép. {episode.episode_num}
                 </p>
               )}
@@ -290,7 +290,7 @@ function AudioPlayer({ episode, onClose }: { episode: Episode; onClose: () => vo
                 value={current}
                 onChange={seek}
                 className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                style={{ background: `linear-gradient(to right,#7C3AED ${pct}%,rgba(255,255,255,0.15) ${pct}%)` }}
+                style={{ background: `linear-gradient(to right,#f59e0b ${pct}%,rgba(255,255,255,0.15) ${pct}%)` }}
               />
               <div className="flex justify-between text-[10px] text-white/40">
                 <span>{formatDuration(current)}</span>
@@ -306,8 +306,8 @@ function AudioPlayer({ episode, onClose }: { episode: Episode; onClose: () => vo
                 onClick={togglePlay}
                 className="w-16 h-16 rounded-full flex items-center justify-center"
                 style={{
-                  background: "linear-gradient(135deg,#7C3AED,#4F46E5)",
-                  boxShadow: "0 8px 32px rgba(124,58,237,0.6)"
+                  background: "linear-gradient(135deg,#f59e0b,#d97706)",
+                  boxShadow: "0 8px 32px rgba(245,158,11,0.6)"
                 }}
               >
                 {playing ? <Pause className="w-7 h-7 text-white" /> : <Play className="w-7 h-7 text-white ml-1" />}
@@ -511,7 +511,7 @@ function LiveView({ live, onClose }: { live: Live; onClose: () => void }) {
           <div key={msg.id} className="flex items-start gap-2">
             <div
               className="w-6 h-6 rounded-full flex-shrink-0 overflow-hidden"
-              style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)" }}
+              style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}
             >
               {msg.author_avatar ? (
                 <img src={msg.author_avatar} alt="" className="w-full h-full object-cover" />
@@ -522,7 +522,7 @@ function LiveView({ live, onClose }: { live: Live; onClose: () => void }) {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <span className="text-[10px] font-bold text-purple-300">{msg.author_name} </span>
+              <span className="text-[10px] font-bold text-amber-300">{msg.author_name} </span>
               <span className="text-xs text-white/80">{msg.content}</span>
             </div>
           </div>
@@ -533,7 +533,7 @@ function LiveView({ live, onClose }: { live: Live; onClose: () => void }) {
       {/* Saisie */}
       <div
         className="px-3 py-3 border-t"
-        style={{ background: "rgba(13,8,32,0.98)", borderColor: "rgba(139,92,246,0.2)" }}
+        style={{ background: "rgba(13,8,32,0.98)", borderColor: "rgba(245,158,11,0.2)" }}
       >
         {user ? (
           <div className="flex gap-2 items-center">
@@ -544,13 +544,13 @@ function LiveView({ live, onClose }: { live: Live; onClose: () => void }) {
               placeholder="Réagis en direct..."
               maxLength={200}
               className="flex-1 px-4 py-2.5 rounded-full text-sm text-white outline-none"
-              style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(139,92,246,0.3)" }}
+              style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(245,158,11,0.3)" }}
             />
             <button
               onClick={sendMessage}
               disabled={!newMsg.trim() || sending}
               className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)" }}
+              style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}
             >
               <Send className="w-4 h-4 text-white" />
             </button>
@@ -620,20 +620,20 @@ function EpisodeCard({ episode, onPlay, isPlaying }: { episode: Episode; onPlay:
     <div
       className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all"
       style={{
-        background: isPlaying ? "rgba(124,58,237,0.2)" : "rgba(255,255,255,0.04)",
-        border: `1px solid ${isPlaying ? "rgba(124,58,237,0.5)" : "rgba(255,255,255,0.08)"}`
+        background: isPlaying ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.04)",
+        border: `1px solid ${isPlaying ? "rgba(245,158,11,0.5)" : "rgba(255,255,255,0.08)"}`
       }}
       onClick={() => onPlay(episode)}
     >
       <div
         className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 relative"
-        style={{ background: "linear-gradient(135deg,#7C3AED44,#4F46E544)" }}
+        style={{ background: "linear-gradient(135deg,#f59e0b44,#d9770644)" }}
       >
         {episode.cover_url ? (
           <img src={episode.cover_url} alt="" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            {isVideo ? <Video className="w-5 h-5 text-purple-400" /> : <Radio className="w-5 h-5 text-purple-400" />}
+            {isVideo ? <Video className="w-5 h-5 text-amber-400" /> : <Radio className="w-5 h-5 text-amber-400" />}
           </div>
         )}
         {isVideo && (
@@ -646,7 +646,7 @@ function EpisodeCard({ episode, onPlay, isPlaying }: { episode: Episode; onPlay:
         <p className="text-sm font-semibold text-white truncate">{episode.title}</p>
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           {episode.serie && (
-            <p className="text-[10px] text-purple-400">📚 {episode.serie} · Ép. {episode.episode_num}</p>
+            <p className="text-[10px] text-amber-400">📚 {episode.serie} · Ép. {episode.episode_num}</p>
           )}
           <MediaBadge type={episode.media_type} />
         </div>
@@ -663,7 +663,7 @@ function EpisodeCard({ episode, onPlay, isPlaying }: { episode: Episode; onPlay:
       <button
         className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
         style={{
-          background: isPlaying ? "linear-gradient(135deg,#7C3AED,#4F46E5)" : "rgba(255,255,255,0.08)"
+          background: isPlaying ? "linear-gradient(135deg,#f59e0b,#d97706)" : "rgba(255,255,255,0.08)"
         }}
       >
         {isPlaying ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white ml-0.5" />}
@@ -720,7 +720,7 @@ function ChannelView({
   return (
     <div className="min-h-screen pb-32" style={{ background: "linear-gradient(160deg,#0d0820,#1a0838,#0d0820)" }}>
       <div className="relative">
-        <div className="h-36 w-full" style={{ background: `linear-gradient(135deg,${c.color}44,#7C3AED44)` }}>
+        <div className="h-36 w-full" style={{ background: `linear-gradient(135deg,${c.color}44,#f59e0b44)` }}>
           {channel.cover_url && <img src={channel.cover_url} alt="" className="w-full h-full object-cover opacity-60" />}
           <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom,transparent 40%,#0d0820 100%)" }} />
         </div>
@@ -760,8 +760,8 @@ function ChannelView({
                   onClick={toggleSub}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold"
                   style={subscribed
-                    ? { background: "rgba(124,58,237,0.2)", color: "#a78bfa", border: "1px solid rgba(124,58,237,0.4)" }
-                    : { background: "linear-gradient(135deg,#7C3AED,#4F46E5)", color: "#fff" }
+                    ? { background: "rgba(245,158,11,0.2)", color: "#fbbf24", border: "1px solid rgba(245,158,11,0.4)" }
+                    : { background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "#fff" }
                   }
                 >
                   {subscribed ? <><BellOff className="w-3.5 h-3.5" />Abonné</> : <><Bell className="w-3.5 h-3.5" />S'abonner</>}
@@ -777,7 +777,7 @@ function ChannelView({
         {loading
           ? (
             <div className="flex justify-center py-8">
-              <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : episodes.length === 0
             ? (
@@ -965,7 +965,7 @@ function CreatorRequestModal({ onClose, onSuccess }: { onClose: () => void; onSu
         style={{
           maxHeight: "90vh",
           background: "rgba(15,8,40,0.97)",
-          border: "1px solid rgba(139,92,246,0.3)",
+          border: "1px solid rgba(245,158,11,0.3)",
           borderBottom: "none"
         }}
         onClick={e => e.stopPropagation()}
@@ -977,23 +977,23 @@ function CreatorRequestModal({ onClose, onSuccess }: { onClose: () => void; onSu
           <div className="flex flex-col items-center px-6 py-10 text-center">
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
-              style={{ background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.4)" }}
+              style={{ background: "rgba(245,158,11,0.2)", border: "1px solid rgba(245,158,11,0.4)" }}
             >
-              <Check className="w-8 h-8 text-purple-400" />
+              <Check className="w-8 h-8 text-amber-400" />
             </div>
             <h3 className="font-bold text-xl text-white mb-2">Demande envoyée !</h3>
             <p className="text-sm text-white/60">L'équipe MIREC te contactera sous 48–72h.</p>
             <button
               onClick={onClose}
               className="mt-6 w-full py-3 rounded-xl font-semibold text-sm text-white"
-              style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)" }}
+              style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}
             >
               Fermer
             </button>
           </div>
         ) : (
           <div className="px-5 pb-8">
-            <div className="flex items-center justify-between py-4 border-b mb-5" style={{ borderColor: "rgba(139,92,246,0.2)" }}>
+            <div className="flex items-center justify-between py-4 border-b mb-5" style={{ borderColor: "rgba(245,158,11,0.2)" }}>
               <div>
                 <h3 className="font-bold text-lg text-white">Devenir créateur</h3>
                 <p className="text-xs text-white/50 mt-0.5">Remplis ce formulaire</p>
@@ -1010,7 +1010,7 @@ function CreatorRequestModal({ onClose, onSuccess }: { onClose: () => void; onSu
                   onChange={field("full_name")}
                   placeholder="Pasteur Jean..."
                   className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(139,92,246,0.25)" }}
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(245,158,11,0.25)" }}
                 />
               </div>
               <div>
@@ -1020,7 +1020,7 @@ function CreatorRequestModal({ onClose, onSuccess }: { onClose: () => void; onSu
                   onChange={field("ministry")}
                   placeholder="Radio Lumière…"
                   className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(139,92,246,0.25)" }}
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(245,158,11,0.25)" }}
                 />
               </div>
               <div>
@@ -1030,7 +1030,7 @@ function CreatorRequestModal({ onClose, onSuccess }: { onClose: () => void; onSu
                   onChange={field("contact")}
                   placeholder="+229 96 00 00 00"
                   className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(139,92,246,0.25)" }}
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(245,158,11,0.25)" }}
                 />
               </div>
               <div>
@@ -1039,7 +1039,7 @@ function CreatorRequestModal({ onClose, onSuccess }: { onClose: () => void; onSu
                   value={form.creator_type}
                   onChange={field("creator_type")}
                   className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(139,92,246,0.25)" }}
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(245,158,11,0.25)" }}
                 >
                   <option value="pasteur">⛪ Pasteur</option>
                   <option value="radio">📻 Radio</option>
@@ -1056,7 +1056,7 @@ function CreatorRequestModal({ onClose, onSuccess }: { onClose: () => void; onSu
                   placeholder="Décris ton ministère…"
                   rows={4}
                   className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none resize-none"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(139,92,246,0.25)" }}
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(245,158,11,0.25)" }}
                 />
               </div>
               {errorMsg && <p className="text-xs text-red-400 text-center">{errorMsg}</p>}
@@ -1064,7 +1064,7 @@ function CreatorRequestModal({ onClose, onSuccess }: { onClose: () => void; onSu
                 onClick={handleSubmit}
                 disabled={sending || !form.full_name || !form.ministry || !form.description || !form.contact}
                 className="w-full py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-40"
-                style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)", boxShadow: "0 4px 20px rgba(124,58,237,0.4)" }}
+                style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 4px 20px rgba(245,158,11,0.4)" }}
               >
                 {sending ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -1219,11 +1219,11 @@ export default function Podcast() {
       {/* HEADER */}
       <div
         className="sticky top-0 z-30 px-4 py-3"
-        style={{ background: "rgba(13,8,32,0.9)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(139,92,246,0.15)" }}
+        style={{ background: "rgba(13,8,32,0.9)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(245,158,11,0.15)" }}
       >
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Radio className="w-5 h-5 text-purple-400" />
+            <Radio className="w-5 h-5 text-amber-400" />
             <div>
               <h1 className="font-bold text-base text-white leading-none">Podcast MIREC</h1>
               <p className="text-[10px] text-white/40">Enseignements · Prédications · Lives</p>
@@ -1236,7 +1236,7 @@ export default function Podcast() {
               </button>
             )}
             {isCreator && (
-              <button onClick={() => navigate("/creator-dashboard")} className="px-3 py-1.5 rounded-full text-xs font-semibold bg-purple-600 text-white">
+              <button onClick={() => navigate("/creator-dashboard")} className="px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-600 text-white">
                 Créateur
               </button>
             )}
@@ -1252,7 +1252,7 @@ export default function Podcast() {
               <button
                 onClick={() => setShowForm(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white"
-                style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)", boxShadow: "0 2px 8px rgba(124,58,237,0.4)" }}
+                style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 2px 8px rgba(245,158,11,0.4)" }}
               >
                 <Mic2 className="w-3.5 h-3.5" /> Créateur
               </button>
@@ -1270,7 +1270,7 @@ export default function Podcast() {
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
               className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${activeTab === tab.key ? "text-white" : "text-white/40 bg-white/5"}`}
-              style={activeTab === tab.key ? { background: "linear-gradient(135deg,#7C3AED44,#4F46E544)", border: "1px solid rgba(124,58,237,0.4)" } : {}}
+              style={activeTab === tab.key ? { background: "linear-gradient(135deg,#f59e0b44,#d9770644)", border: "1px solid rgba(245,158,11,0.4)" } : {}}
             >
               {tab.label}
             </button>
@@ -1305,22 +1305,22 @@ export default function Podcast() {
             <p className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Canaux disponibles</p>
             {loading ? (
               <div className="flex justify-center py-12">
-                <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : channels.length === 0 ? (
               <div className="flex flex-col items-center py-16 text-center px-4">
                 <div
                   className="w-24 h-24 rounded-3xl flex items-center justify-center mb-5"
-                  style={{ background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.3)" }}
+                  style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)" }}
                 >
-                  <Radio className="w-12 h-12 text-purple-400" />
+                  <Radio className="w-12 h-12 text-amber-400" />
                 </div>
                 <div
                   className="flex items-center gap-1.5 px-3 py-1 rounded-full mb-4"
-                  style={{ background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.3)" }}
+                  style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)" }}
                 >
-                  <Lock className="w-3 h-3 text-purple-400" />
-                  <span className="text-[11px] font-semibold text-purple-300">Bientôt disponible</span>
+                  <Lock className="w-3 h-3 text-amber-400" />
+                  <span className="text-[11px] font-semibold text-amber-300">Bientôt disponible</span>
                 </div>
                 <h3 className="font-bold text-lg text-white mb-2">Aucun canal pour l'instant</h3>
                 <p className="text-sm text-white/40 leading-relaxed mb-6">Les enseignements arrivent bientôt sur MIREC.</p>
@@ -1328,7 +1328,7 @@ export default function Podcast() {
                   <button
                     onClick={() => setShowForm(true)}
                     className="px-6 py-3 rounded-xl font-bold text-sm text-white flex items-center gap-2"
-                    style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)", boxShadow: "0 4px 20px rgba(124,58,237,0.4)" }}
+                    style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 4px 20px rgba(245,158,11,0.4)" }}
                   >
                     <Mic2 className="w-4 h-4" /> Devenir le premier créateur
                   </button>
@@ -1343,12 +1343,12 @@ export default function Podcast() {
                       key={ch.id}
                       onClick={() => setSelectedChannel(ch)}
                       className="w-full text-left rounded-2xl overflow-hidden transition-all hover:scale-[1.01]"
-                      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(139,92,246,0.2)" }}
+                      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(245,158,11,0.2)" }}
                     >
                       <div className="flex items-center gap-3 p-4">
                         <div
                           className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0"
-                          style={{ background: `linear-gradient(135deg,${c.color}44,#7C3AED44)` }}
+                          style={{ background: `linear-gradient(135deg,${c.color}44,#f59e0b44)` }}
                         >
                           {ch.cover_url ? (
                             <img src={ch.cover_url} alt="" className="w-full h-full object-cover" />
@@ -1427,7 +1427,7 @@ export default function Podcast() {
               <button
                 onClick={() => setActiveTab("discover")}
                 className="mt-4 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-                style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)" }}
+                style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}
               >
                 Découvrir
               </button>
@@ -1441,12 +1441,12 @@ export default function Podcast() {
                     key={ch.id}
                     onClick={() => setSelectedChannel(ch)}
                     className="w-full text-left rounded-2xl overflow-hidden"
-                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(139,92,246,0.3)" }}
+                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(245,158,11,0.3)" }}
                   >
                     <div className="flex items-center gap-3 p-4">
                       <div
                         className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0"
-                        style={{ background: `linear-gradient(135deg,${c.color}44,#7C3AED44)` }}
+                        style={{ background: `linear-gradient(135deg,${c.color}44,#f59e0b44)` }}
                       >
                         {ch.cover_url ? (
                           <img src={ch.cover_url} alt="" className="w-full h-full object-cover" />
