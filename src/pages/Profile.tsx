@@ -717,7 +717,7 @@ export default function Profile() {
           subtitle="Version 1.0 disponible (APK)"
           onClick={() => {
             const link = document.createElement('a');
-            link.href = "https://jafhpkbtxcmzufznnbxc.supabase.co/storage/v1/object/public/app-mirec./app-debug.apk";
+            link.href = "https://github.com/2EK66/app-creator-studio/releases/latest/download/app-debug.apk";
             link.download = "MIREC.apk";
             link.target = "_blank";
             link.click();
