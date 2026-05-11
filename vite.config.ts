@@ -4,6 +4,7 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(() => ({
+  base: "./", // <--- AJOUTE CETTE LIGNE : Crucial pour Capacitor/Android
   server: {
     host: "0.0.0.0",
     port: 5000,
