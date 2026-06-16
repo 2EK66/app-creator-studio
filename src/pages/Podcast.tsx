@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -102,14 +102,6 @@ const CAT: Record<string, { label: string; emoji: string; color: string }> = {
   autre: { label: "Autre", emoji: "✨", color: "#6B7280" },
 };
 
-function ChevRight({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-      <path d="M9 18l6-6-6-6" />
-    </svg>
-  );
-}
-
 // ================================================================
 // BADGE MEDIA TYPE
 // ================================================================
@@ -147,7 +139,7 @@ function MediaBadge({ type }: { type?: string }) {
 // ================================================================
 // LECTEUR AUDIO
 // ================================================================
-function AudioPlayer({ episode, onClose }: { episode: Episode; onClose: () => void }) {
+export function AudioPlayer({ episode, onClose }: { episode: Episode; onClose: () => void }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(episode.progress_sec || 0);
@@ -358,9 +350,9 @@ function AudioPlayer({ episode, onClose }: { episode: Episode; onClose: () => vo
 }
 
 // ================================================================
-// LECTEUR VIDEO (mp4 ou YouTube embed)
+// LECTEUR VIDEO
 // ================================================================
-function VideoPlayer({ episode, onClose }: { episode: Episode; onClose: () => void }) {
+export function VideoPlayer({ episode, onClose }: { episode: Episode; onClose: () => void }) {
   const ytId = episode.youtube_url ? extractYouTubeId(episode.youtube_url) : null;
   return (
     <div className="fixed inset-0 z-[80] flex flex-col bg-black">
@@ -399,9 +391,9 @@ function VideoPlayer({ episode, onClose }: { episode: Episode; onClose: () => vo
 }
 
 // ================================================================
-// VUE LIVE avec chat Realtime
+// VUE LIVE
 // ================================================================
-function LiveView({ live, onClose }: { live: Live; onClose: () => void }) {
+export function LiveView({ live, onClose }: { live: Live; onClose: () => void }) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<LiveMessage[]>([]);
   const [newMsg, setNewMsg] = useState("");
@@ -479,7 +471,6 @@ function LiveView({ live, onClose }: { live: Live; onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[90] flex flex-col bg-black">
-      {/* Header */}
       <div
         className="flex items-center gap-3 px-4 pt-10 pb-2"
         style={{ background: "linear-gradient(to bottom,rgba(0,0,0,0.9),transparent)" }}
@@ -506,7 +497,6 @@ function LiveView({ live, onClose }: { live: Live; onClose: () => void }) {
         </div>
       </div>
 
-      {/* Video zone */}
       <div className="w-full bg-black flex-shrink-0" style={{ height: "52vw", maxHeight: 280 }}>
         {ytId ? (
           <iframe
@@ -532,7 +522,6 @@ function LiveView({ live, onClose }: { live: Live; onClose: () => void }) {
         )}
       </div>
 
-      {/* Chat */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2" style={{ background: "rgba(13,8,32,0.95)" }}>
         {messages.length === 0 && (
           <div className="flex flex-col items-center py-8 text-center">
@@ -563,7 +552,6 @@ function LiveView({ live, onClose }: { live: Live; onClose: () => void }) {
         <div ref={chatEndRef} />
       </div>
 
-      {/* Saisie */}
       <div
         className="px-3 py-3 border-t"
         style={{ background: "rgba(13,8,32,0.98)", borderColor: "rgba(245,158,11,0.2)" }}
@@ -593,54 +581,6 @@ function LiveView({ live, onClose }: { live: Live; onClose: () => void }) {
         )}
       </div>
     </div>
-  );
-}
-
-// ================================================================
-// CARTE LIVE
-// ================================================================
-function LiveCard({ live, onOpen }: { live: Live; onOpen: (l: Live) => void }) {
-  return (
-    <button
-      onClick={() => onOpen(live)}
-      className="w-full text-left rounded-2xl overflow-hidden transition-all hover:scale-[1.01]"
-      style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.35)" }}
-    >
-      <div
-        className="relative w-full h-28 flex items-center justify-center overflow-hidden"
-        style={{ background: "linear-gradient(135deg,#1a0820,#2d0a0a)" }}
-      >
-        {live.channel_cover && (
-          <img src={live.channel_cover} alt="" className="w-full h-full object-cover opacity-40 absolute inset-0" />
-        )}
-        <div
-          className="relative z-10 w-12 h-12 rounded-full flex items-center justify-center"
-          style={{ background: "rgba(220,38,38,0.3)", border: "2px solid rgba(220,38,38,0.6)" }}
-        >
-          <Wifi className="w-6 h-6 text-red-400 animate-pulse" />
-        </div>
-        <span
-          className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
-          style={{ background: "rgba(220,38,38,0.9)" }}
-        >
-          <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> LIVE
-        </span>
-        <span
-          className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold text-white"
-          style={{ background: "rgba(0,0,0,0.6)" }}
-        >
-          <Eye className="w-2.5 h-2.5" /> {live.viewer_count}
-        </span>
-      </div>
-      <div className="px-4 py-3">
-        <p className="font-bold text-sm text-white truncate">{live.title}</p>
-        {live.channel_name && <p className="text-[11px] text-red-300/70 mt-0.5">{live.channel_name}</p>}
-        {live.description && <p className="text-xs text-white/40 mt-1 line-clamp-2">{live.description}</p>}
-        <p className="text-[10px] text-white/30 mt-2">
-          {live.started_at ? `Commencé ${timeAgo(live.started_at)}` : "Bientôt"}
-        </p>
-      </div>
-    </button>
   );
 }
 
@@ -708,7 +648,7 @@ function EpisodeCard({ episode, onPlay, isPlaying }: { episode: Episode; onPlay:
 // ================================================================
 // VUE CANAL
 // ================================================================
-function ChannelView({
+export function ChannelView({
   channel,
   onBack,
   onPlay,
@@ -791,746 +731,42 @@ function ChannelView({
               {user && (
                 <button
                   onClick={toggleSub}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold"
-                  style={subscribed
-                    ? { background: "rgba(245,158,11,0.2)", color: "#fbbf24", border: "1px solid rgba(245,158,11,0.4)" }
-                    : { background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "#fff" }
-                  }
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all"
+                  style={{
+                    background: subscribed ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg,#f59e0b,#d97706)",
+                    border: subscribed ? "1px solid rgba(255,255,255,0.2)" : "none"
+                  }}
                 >
-                  {subscribed ? <><BellOff className="w-3.5 h-3.5" />Abonné</> : <><Bell className="w-3.5 h-3.5" />S'abonner</>}
+                  {subscribed ? <Check className="w-3.5 h-3.5" /> : null}
+                  {subscribed ? "Abonné" : "S'abonner"}
                 </button>
               )}
             </div>
           </div>
-          {channel.description && <p className="text-xs text-white/50 mt-2">{channel.description}</p>}
+          {channel.description && (
+            <p className="text-xs text-white/60 mt-4 leading-relaxed">{channel.description}</p>
+          )}
         </div>
       </div>
-      <div className="px-4">
-        <p className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Épisodes</p>
-        {loading
-          ? (
-            <div className="flex justify-center py-8">
-              <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : episodes.length === 0
-            ? (
-              <div className="flex flex-col items-center py-12 text-center">
-                <Radio className="w-10 h-10 text-white/20 mb-3" />
-                <p className="text-sm text-white/50">Aucun épisode pour l'instant</p>
-              </div>
-            )
-            : (
-              <div className="space-y-2">
-                {episodes.map(ep => (
-                  <EpisodeCard key={ep.id} episode={ep} isPlaying={currentEpisode?.id === ep.id} onPlay={onPlay} />
-                ))}
-              </div>
-            )
-        }
-      </div>
-    </div>
-  );
-}
 
-// ================================================================
-// MODAL DÉMARRER UN LIVE
-// ================================================================
-function StartLiveModal({ channel, onClose, onStarted }: { channel: Channel; onClose: () => void; onStarted: (live: Live) => void }) {
-  const { user } = useAuth();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [ytUrl, setYtUrl] = useState("");
-  const [starting, setStarting] = useState(false);
-
-  const handleStart = async () => {
-    if (!title.trim() || !user) return;
-    setStarting(true);
-    const { data, error } = await (supabase.from("podcast_lives" as any).insert({
-      channel_id: channel.id,
-      creator_id: user.id,
-      title: title.trim(),
-      description: description.trim() || null,
-      youtube_live_url: ytUrl.trim() || null,
-      status: "live",
-      started_at: new Date().toISOString(),
-    }).select().single() as any);
-    if (!error && data) {
-      await (supabase.from("podcast_channels" as any).update({ is_live: true } as any).eq("id", channel.id) as any);
-      onStarted({ ...(data as any), channel_name: channel.name, channel_cover: channel.cover_url });
-    }
-    setStarting(false);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-end justify-center" onClick={onClose}>
-      <div
-        className="w-full max-w-lg rounded-t-3xl overflow-y-auto px-5 pb-8"
-        style={{
-          maxHeight: "85vh",
-          background: "rgba(15,8,40,0.97)",
-          border: "1px solid rgba(220,38,38,0.3)",
-          borderBottom: "none"
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-white/20" />
-        </div>
-        <div className="flex items-center justify-between py-4 border-b mb-5" style={{ borderColor: "rgba(220,38,38,0.2)" }}>
-          <div>
-            <h3 className="font-bold text-lg text-white">🔴 Démarrer un Live</h3>
-            <p className="text-xs text-white/50 mt-0.5">{channel.name}</p>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10">
-            <X className="w-4 h-4 text-white/60" />
-          </button>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <label className="text-xs font-semibold text-white/70 mb-1 block">Titre du Live *</label>
-            <input
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              placeholder="Culte du dimanche, Étude biblique..."
-              className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none"
-              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(220,38,38,0.25)" }}
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-white/70 mb-1 block">Description (optionnel)</label>
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="De quoi parle ce live ?"
-              rows={3}
-              className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none resize-none"
-              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(220,38,38,0.25)" }}
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-white/70 mb-1 block flex items-center gap-1">
-              <Youtube className="w-3.5 h-3.5 text-red-400" /> Lien YouTube Live (optionnel)
-            </label>
-            <input
-              value={ytUrl}
-              onChange={e => setYtUrl(e.target.value)}
-              placeholder="https://youtube.com/watch?v=..."
-              className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none"
-              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(220,38,38,0.25)" }}
-            />
-            <p className="text-[10px] text-white/30 mt-1">Colle ici le lien de ta diffusion YouTube en direct</p>
-          </div>
-          <button
-            onClick={handleStart}
-            disabled={!title.trim() || starting}
-            className="w-full py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-40"
-            style={{ background: "linear-gradient(135deg,#DC2626,#ef4444)", boxShadow: "0 4px 20px rgba(220,38,38,0.4)" }}
-          >
-            {starting ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <><Wifi className="w-4 h-4" /> Démarrer maintenant</>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ================================================================
-// MODAL DEMANDE CRÉATEUR
-// ================================================================
-function CreatorRequestModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const { user } = useAuth();
-  const [step, setStep] = useState<"form" | "success">("form");
-  const [sending, setSending] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [form, setForm] = useState({
-    full_name: "",
-    ministry: "",
-    creator_type: "pasteur",
-    description: "",
-    contact: ""
-  });
-
-  const field = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setForm(p => ({ ...p, [k]: e.target.value }));
-
-  const handleSubmit = async () => {
-    if (!form.full_name || !form.ministry || !form.description || !form.contact) return;
-    if (!user) {
-      setErrorMsg("Vous devez être connecté.");
-      return;
-    }
-    setSending(true);
-    setErrorMsg("");
-    try {
-      const { data: ex } = await (supabase.from("podcast_creator_requests" as any)
-        .select("id,status")
-        .eq("user_id", user.id)
-        .maybeSingle() as any);
-      if (ex) {
-        setErrorMsg((ex as any).status === "pending" ? "Demande déjà en attente ⏳" : "Tu as déjà fait une demande");
-        setSending(false);
-        return;
-      }
-      const { error } = await (supabase.from("podcast_creator_requests" as any).insert({
-        user_id: user.id,
-        email: user.email || "",
-        ...form,
-        status: "pending"
-      }) as any);
-      if (error) throw error;
-      setStep("success");
-      onSuccess();
-    } catch {
-      setErrorMsg("Erreur lors de l'envoi.");
-    } finally {
-      setSending(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-end justify-center" onClick={() => !sending && onClose()}>
-      <div
-        className="w-full max-w-lg rounded-t-3xl overflow-y-auto"
-        style={{
-          maxHeight: "90vh",
-          background: "rgba(15,8,40,0.97)",
-          border: "1px solid rgba(245,158,11,0.3)",
-          borderBottom: "none"
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-white/20" />
-        </div>
-        {step === "success" ? (
-          <div className="flex flex-col items-center px-6 py-10 text-center">
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
-              style={{ background: "rgba(245,158,11,0.2)", border: "1px solid rgba(245,158,11,0.4)" }}
-            >
-              <Check className="w-8 h-8 text-amber-400" />
-            </div>
-            <h3 className="font-bold text-xl text-white mb-2">Demande envoyée !</h3>
-            <p className="text-sm text-white/60">L'équipe MIREC te contactera sous 48–72h.</p>
-            <button
-              onClick={onClose}
-              className="mt-6 w-full py-3 rounded-xl font-semibold text-sm text-white"
-              style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}
-            >
-              Fermer
-            </button>
-          </div>
+      {/* Liste des Épisodes du Canal */}
+      <div className="px-5 mt-4 space-y-2">
+        <h3 className="text-sm font-semibold text-white/40 mb-3 uppercase tracking-wider">Épisodes disponibles</h3>
+        {loading ? (
+          <p className="text-xs text-white/40 text-center py-6">Chargement des épisodes...</p>
+        ) : episodes.length === 0 ? (
+          <p className="text-xs text-white/40 text-center py-6">Aucun épisode publié pour le moment.</p>
         ) : (
-          <div className="px-5 pb-8">
-            <div className="flex items-center justify-between py-4 border-b mb-5" style={{ borderColor: "rgba(245,158,11,0.2)" }}>
-              <div>
-                <h3 className="font-bold text-lg text-white">Devenir créateur</h3>
-                <p className="text-xs text-white/50 mt-0.5">Remplis ce formulaire</p>
-              </div>
-              <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10">
-                <X className="w-4 h-4 text-white/60" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-white/70 mb-1 block">Nom complet *</label>
-                <input
-                  value={form.full_name}
-                  onChange={field("full_name")}
-                  placeholder="Pasteur Jean..."
-                  className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(245,158,11,0.25)" }}
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-white/70 mb-1 block">Ministère *</label>
-                <input
-                  value={form.ministry}
-                  onChange={field("ministry")}
-                  placeholder="Radio Lumière…"
-                  className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(245,158,11,0.25)" }}
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-white/70 mb-1 block">Contact *</label>
-                <input
-                  value={form.contact}
-                  onChange={field("contact")}
-                  placeholder="+229 96 00 00 00"
-                  className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(245,158,11,0.25)" }}
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-white/70 mb-1 block">Type de contenu</label>
-                <select
-                  value={form.creator_type}
-                  onChange={field("creator_type")}
-                  className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(245,158,11,0.25)" }}
-                >
-                  <option value="pasteur">⛪ Pasteur</option>
-                  <option value="radio">📻 Radio</option>
-                  <option value="enseignant">📖 Enseignant</option>
-                  <option value="evangeliste">📣 Évangéliste</option>
-                  <option value="autre">✨ Autre</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-white/70 mb-1 block">Description *</label>
-                <textarea
-                  value={form.description}
-                  onChange={field("description")}
-                  placeholder="Décris ton ministère…"
-                  rows={4}
-                  className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none resize-none"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(245,158,11,0.25)" }}
-                />
-              </div>
-              {errorMsg && <p className="text-xs text-red-400 text-center">{errorMsg}</p>}
-              <button
-                onClick={handleSubmit}
-                disabled={sending || !form.full_name || !form.ministry || !form.description || !form.contact}
-                className="w-full py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-40"
-                style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 4px 20px rgba(245,158,11,0.4)" }}
-              >
-                {sending ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  "Envoyer ma demande →"
-                )}
-              </button>
-            </div>
-          </div>
+          episodes.map(ep => (
+            <EpisodeCard
+              key={ep.id}
+              episode={ep}
+              onPlay={onPlay}
+              isPlaying={currentEpisode?.id === ep.id}
+            />
+          ))
         )}
       </div>
-    </div>
-  );
-}
-
-// ================================================================
-// COMPOSANT PRINCIPAL
-// ================================================================
-export default function Podcast() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [channels, setChannels] = useState<Channel[]>([]);
-  const [lives, setLives] = useState<Live[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
-  const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null);
-  const [currentVideoEpisode, setCurrentVideoEpisode] = useState<Episode | null>(null);
-  const [activeLive, setActiveLive] = useState<Live | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [showStartLive, setShowStartLive] = useState(false);
-  const [activeTab, setActiveTab] = useState<"discover" | "lives" | "subscriptions">("discover");
-  const [searchQ, setSearchQ] = useState("");
-  const [filterCat, setFilterCat] = useState<string>("all");
-  const [recentEpisodes, setRecentEpisodes] = useState<Episode[]>([]);
-  const [requestStatus, setRequestStatus] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isCreator, setIsCreator] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    supabase.from("profiles").select("role").eq("id", user.id).single().then(({ data }) => setIsAdmin(data?.role === "admin"));
-    (supabase.from("podcast_channels" as any).select("id").eq("creator_id", user.id).maybeSingle() as any)
-      .then(({ data }: any) => setIsCreator(!!data));
-    (supabase.from("podcast_creator_requests" as any).select("status").eq("user_id", user.id).maybeSingle() as any)
-      .then(({ data }: any) => { if (data) setRequestStatus((data as any).status); });
-  }, [user]);
-
-  const fetchChannels = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await (supabase.from("podcast_channels" as any).select("*").order("created_at", { ascending: false }) as any);
-    if (error) {
-      setLoading(false);
-      return;
-    }
-    const enriched = await Promise.all((data || []).map(async (ch: any) => {
-      const [epR, subR, myR] = await Promise.all([
-        (supabase.from("podcast_episodes" as any).select("id", { count: "exact", head: true }).eq("channel_id", ch.id) as any),
-        (supabase.from("podcast_subscriptions" as any).select("id", { count: "exact", head: true }).eq("channel_id", ch.id) as any),
-        user ? (supabase.from("podcast_subscriptions" as any).select("id").eq("channel_id", ch.id).eq("user_id", user.id).maybeSingle() as any) : Promise.resolve({ data: null }),
-      ]);
-      return {
-        ...ch,
-        episode_count: epR.count || 0,
-        subscriber_count: subR.count || 0,
-        is_subscribed: !!myR.data,
-      };
-    }));
-    setChannels(enriched);
-    setLoading(false);
-  }, [user]);
-
-  const fetchLives = useCallback(async () => {
-    const { data } = await (supabase.from("podcast_lives" as any)
-      .select("*, podcast_channels(name, cover_url)")
-      .eq("status", "live")
-      .order("started_at", { ascending: false }) as any);
-    if (data) {
-      setLives((data as any[]).map((l: any) => ({
-        ...l,
-        channel_name: l.podcast_channels?.name || "",
-        channel_cover: l.podcast_channels?.cover_url || null,
-      })));
-    }
-  }, []);
-
-  const fetchRecent = useCallback(async () => {
-    const { data } = await (supabase.from("podcast_episodes" as any)
-      .select("*, podcast_channels(name)")
-      .eq("is_published", true)
-      .order("created_at", { ascending: false })
-      .limit(6) as any);
-    if (data) {
-      setRecentEpisodes((data as any[]).map((e: any) => ({ ...e, channel_name: e.podcast_channels?.name || "" })));
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchChannels();
-    fetchLives();
-    fetchRecent();
-  }, [fetchChannels, fetchLives, fetchRecent]);
-
-  // Realtime: nouveaux lives
-  useEffect(() => {
-    const ch = supabase.channel("lives-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "podcast_lives" }, fetchLives)
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [fetchLives]);
-
-  const handlePlayEpisode = (ep: Episode) => {
-    if (ep.media_type === "video" || ep.media_type === "youtube") {
-      setCurrentVideoEpisode(ep);
-      setCurrentEpisode(null);
-    } else {
-      setCurrentEpisode(ep);
-      setCurrentVideoEpisode(null);
-    }
-  };
-
-  const mySubs = channels.filter(c => c.is_subscribed);
-  const cat = (k: string) => CAT[k] || CAT.autre;
-
-  if (activeLive) return <LiveView live={activeLive} onClose={() => setActiveLive(null)} />;
-  if (currentVideoEpisode) return <VideoPlayer episode={currentVideoEpisode} onClose={() => setCurrentVideoEpisode(null)} />;
-
-  if (selectedChannel) {
-    return (
-      <>
-        <ChannelView
-          channel={selectedChannel}
-          onBack={() => setSelectedChannel(null)}
-          onPlay={handlePlayEpisode}
-          currentEpisode={currentEpisode}
-          onStartLive={() => setShowStartLive(true)}
-        />
-        {currentEpisode && <AudioPlayer episode={currentEpisode} onClose={() => setCurrentEpisode(null)} />}
-        {showStartLive && (
-          <StartLiveModal
-            channel={selectedChannel}
-            onClose={() => setShowStartLive(false)}
-            onStarted={(live) => {
-              setShowStartLive(false);
-              setActiveLive(live);
-            }}
-          />
-        )}
-      </>
-    );
-  }
-
-  return (
-    <div className="min-h-screen pb-36" style={{ background: "linear-gradient(160deg,#0d0820,#1a0838,#0d0820)" }}>
-      {/* HEADER */}
-      <div
-        className="sticky top-0 z-30 px-4 py-3"
-        style={{ background: "rgba(13,8,32,0.9)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(245,158,11,0.15)" }}
-      >
-        <div className="max-w-lg mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Radio className="w-5 h-5 text-amber-400" />
-            <div>
-              <h1 className="font-bold text-base text-white leading-none">Podcast MIREC</h1>
-              <p className="text-[10px] text-white/40">Enseignements · Prédications · Lives</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {isAdmin && (
-              <button onClick={() => navigate("/admin")} className="px-3 py-1.5 rounded-full text-xs font-semibold bg-red-600 text-white">
-                Admin
-              </button>
-            )}
-            {isCreator && (
-              <button onClick={() => navigate("/creator-dashboard")} className="px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-600 text-white">
-                Créateur
-              </button>
-            )}
-            {user && (requestStatus === "pending" ? (
-              <div className="px-3 py-1.5 rounded-full text-xs font-semibold text-yellow-300" style={{ background: "rgba(217,119,6,0.2)", border: "1px solid rgba(217,119,6,0.3)" }}>
-                ⏳ En attente
-              </div>
-            ) : requestStatus === "approved" ? (
-              <div className="px-3 py-1.5 rounded-full text-xs font-semibold text-green-300" style={{ background: "rgba(5,150,105,0.2)", border: "1px solid rgba(5,150,105,0.3)" }}>
-                ✅ Créateur
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowForm(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white"
-                style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 2px 8px rgba(245,158,11,0.4)" }}
-              >
-                <Mic2 className="w-3.5 h-3.5" /> Créateur
-              </button>
-            ))}
-          </div>
-        </div>
-        {/* ONGLETS */}
-        <div className="max-w-lg mx-auto flex gap-1 mt-2">
-          {[
-            { key: "discover", label: "Découvrir" },
-            { key: "lives", label: `🔴 Lives${lives.length > 0 ? ` (${lives.length})` : ""}` },
-            { key: "subscriptions", label: `Abonnements${mySubs.length > 0 ? ` (${mySubs.length})` : ""}` },
-          ].map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
-              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${activeTab === tab.key ? "text-white" : "text-white/40 bg-white/5"}`}
-              style={activeTab === tab.key ? { background: "linear-gradient(135deg,#f59e0b44,#d9770644)", border: "1px solid rgba(245,158,11,0.4)" } : {}}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="max-w-lg mx-auto px-4 pt-4">
-        {/* ===== DÉCOUVRIR ===== */}
-        {activeTab === "discover" && (
-          <>
-            {/* Recherche + filtres catégorie */}
-            <div className="mb-4 space-y-2">
-              <div className="relative">
-                <Search className="w-4 h-4 text-white/40 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  value={searchQ}
-                  onChange={e => setSearchQ(e.target.value)}
-                  placeholder="Rechercher un canal..."
-                  className="w-full pl-9 pr-4 py-2.5 rounded-full text-sm text-white outline-none"
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(245,158,11,0.25)" }}
-                />
-              </div>
-              <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
-                {[{ k: "all", l: "Tout", e: "✨" }, ...Object.entries(CAT).map(([k, v]) => ({ k, l: v.label, e: v.emoji }))].map(c => (
-                  <button key={c.k} onClick={() => setFilterCat(c.k)}
-                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all ${filterCat === c.k ? "text-white" : "text-white/50"}`}
-                    style={filterCat === c.k
-                      ? { background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 2px 8px rgba(245,158,11,0.4)" }
-                      : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    {c.e} {c.l}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {lives.length > 0 && (
-              <div className="mb-6">
-                <p className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse inline-block" /> En direct maintenant
-                </p>
-                <div className="space-y-3">
-                  {lives.map(live => <LiveCard key={live.id} live={live} onOpen={setActiveLive} />)}
-                </div>
-              </div>
-            )}
-            {recentEpisodes.length > 0 && filterCat === "all" && !searchQ && (
-              <div className="mb-6">
-                <p className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Récemment ajoutés</p>
-                <div className="space-y-2">
-                  {recentEpisodes.map(ep => (
-                    <EpisodeCard key={ep.id} episode={ep} isPlaying={currentEpisode?.id === ep.id} onPlay={handlePlayEpisode} />
-                  ))}
-                </div>
-              </div>
-            )}
-            <p className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Canaux disponibles</p>
-            {loading ? (
-              <div className="flex justify-center py-12">
-                <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : channels.length === 0 ? (
-              <div className="flex flex-col items-center py-16 text-center px-4">
-                <div className="w-24 h-24 rounded-3xl flex items-center justify-center mb-5"
-                  style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)" }}>
-                  <Radio className="w-12 h-12 text-amber-400" />
-                </div>
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full mb-4"
-                  style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)" }}>
-                  <Lock className="w-3 h-3 text-amber-400" />
-                  <span className="text-[11px] font-semibold text-amber-300">Bientôt disponible</span>
-                </div>
-                <h3 className="font-bold text-lg text-white mb-2">Aucun canal pour l'instant</h3>
-                <p className="text-sm text-white/40 leading-relaxed mb-6">Les enseignements arrivent bientôt sur MIREC.</p>
-                {user && !requestStatus && (
-                  <button onClick={() => setShowForm(true)}
-                    className="px-6 py-3 rounded-xl font-bold text-sm text-white flex items-center gap-2"
-                    style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 4px 20px rgba(245,158,11,0.4)" }}>
-                    <Mic2 className="w-4 h-4" /> Devenir le premier créateur
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {channels
-                  .filter((ch: any) => filterCat === "all" || ch.category === filterCat)
-                  .filter((ch: any) => !searchQ || (ch.name + " " + (ch.description || "")).toLowerCase().includes(searchQ.toLowerCase()))
-                  .map((ch: any) => {
-                  const c = cat(ch.category);
-                  return (
-                    <button
-                      key={ch.id}
-                      onClick={() => setSelectedChannel(ch)}
-                      className="w-full text-left rounded-2xl overflow-hidden transition-all hover:scale-[1.01]"
-                      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(245,158,11,0.2)" }}
-                    >
-                      <div className="flex items-center gap-3 p-4">
-                        <div
-                          className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0"
-                          style={{ background: `linear-gradient(135deg,${c.color}44,#f59e0b44)` }}
-                        >
-                          {ch.cover_url ? (
-                            <img src={ch.cover_url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <span className="text-2xl">{c.emoji}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <p className="font-bold text-sm text-white truncate">{ch.name}</p>
-                            {ch.is_verified && <Check className="w-3.5 h-3.5 text-blue-400" />}
-                            {ch.is_live && (
-                              <span
-                                className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white"
-                                style={{ background: "rgba(220,38,38,0.8)" }}
-                              >
-                                <div className="w-1 h-1 rounded-full bg-white animate-pulse" />LIVE
-                              </span>
-                            )}
-                          </div>
-                          <span
-                            className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                            style={{ background: c.color + "22", color: c.color }}
-                          >
-                            {c.emoji} {c.label}
-                          </span>
-                          <div className="flex items-center gap-3 mt-1">
-                            <span className="text-[10px] text-white/40">{ch.episode_count} épisodes</span>
-                            <span className="text-[10px] text-white/40">{ch.subscriber_count} abonnés</span>
-                          </div>
-                        </div>
-                        <ChevRight className="w-4 h-4 text-white/30 flex-shrink-0" />
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* ===== LIVES ===== */}
-        {activeTab === "lives" && (
-          lives.length === 0 ? (
-            <div className="flex flex-col items-center py-16 text-center">
-              <div
-                className="w-16 h-16 rounded-full flex items-center justify-center mb-3"
-                style={{ background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.3)" }}
-              >
-                <WifiOff className="w-8 h-8 text-red-400/50" />
-              </div>
-              <p className="font-semibold text-white text-sm">Aucun live en cours</p>
-              <p className="text-xs text-white/40 mt-1">Reviens plus tard pour les cultes en direct !</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {lives.map(live => <LiveCard key={live.id} live={live} onOpen={setActiveLive} />)}
-            </div>
-          )
-        )}
-
-        {/* ===== ABONNEMENTS ===== */}
-        {activeTab === "subscriptions" && (
-          !user ? (
-            <div className="flex flex-col items-center py-16 text-center">
-              <Bell className="w-12 h-12 text-white/20 mb-3" />
-              <p className="font-semibold text-white text-sm">Connecte-toi pour voir tes abonnements</p>
-            </div>
-          ) : mySubs.length === 0 ? (
-            <div className="flex flex-col items-center py-16 text-center">
-              <Bell className="w-12 h-12 text-white/20 mb-3" />
-              <p className="font-semibold text-white text-sm">Aucun abonnement</p>
-              <p className="text-xs text-white/40 mt-1">Abonne-toi à des canaux pour les retrouver ici</p>
-              <button
-                onClick={() => setActiveTab("discover")}
-                className="mt-4 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-                style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}
-              >
-                Découvrir
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {mySubs.map((ch: any) => {
-                const c = cat(ch.category);
-                return (
-                  <button
-                    key={ch.id}
-                    onClick={() => setSelectedChannel(ch)}
-                    className="w-full text-left rounded-2xl overflow-hidden"
-                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(245,158,11,0.3)" }}
-                  >
-                    <div className="flex items-center gap-3 p-4">
-                      <div
-                        className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0"
-                        style={{ background: `linear-gradient(135deg,${c.color}44,#f59e0b44)` }}
-                      >
-                        {ch.cover_url ? (
-                          <img src={ch.cover_url} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <span className="text-xl">{c.emoji}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1 mb-0.5">
-                          <p className="font-bold text-sm text-white truncate">{ch.name}</p>
-                          {ch.is_verified && <Check className="w-3.5 h-3.5 text-blue-400" />}
-                        </div>
-                        <p className="text-[10px] text-white/40">{ch.episode_count} épisodes</p>
-                      </div>
-                      <ChevRight className="w-4 h-4 text-white/30" />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )
-        )}
-      </div>
-
-      {currentEpisode && <AudioPlayer episode={currentEpisode} onClose={() => setCurrentEpisode(null)} />}
-      {showForm && <CreatorRequestModal onClose={() => setShowForm(false)} onSuccess={() => setRequestStatus("pending")} />}
     </div>
   );
 }
