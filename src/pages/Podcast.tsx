@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+// useNavigate n'est pas utilisé → supprimé
+import supabase from "@/integrations/supabase/client";   // ← export par défaut
+import useAuth from "@/hooks/useAuth";                 // ← export par défaut
 import {
-  Radio, Mic2, ChevronRight, Check, X,
+  Radio, Check, X,
   Play, Pause, ArrowLeft, SkipBack, SkipForward,
-  Bell, BellOff, Lock, Video, Youtube,
-  Eye, Send, MessageCircle, Wifi, WifiOff, Search
+  Video, Youtube,
+  Eye, Send, MessageCircle, Wifi
 } from "lucide-react";
 
 // ================================================================
