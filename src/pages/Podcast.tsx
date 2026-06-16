@@ -769,3 +769,15 @@ export function ChannelView({
     </div>
   );
 }
+
+// ================================================================
+// COMPOSANT PRINCIPAL (EXPORT PAR DÉFAUT)
+// ================================================================
+export default function Podcast() {
+  return (
+    <div className="p-6 text-center text-white/70">
+      <p className="text-lg font-bold text-white">🎙️ Espace Podcast</p>
+      <p className="text-sm mt-2">Les canaux et épisodes apparaîtront ici.</p>
+    </div>
+  );
+}
