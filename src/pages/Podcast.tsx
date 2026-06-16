@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-// useNavigate n'est pas utilisé → supprimé
-import supabase from "@/integrations/supabase/client";   // ← export par défaut
-import useAuth from "@/hooks/useAuth";                 // ← export par défaut
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Radio, Check, X,
   Play, Pause, ArrowLeft, SkipBack, SkipForward,
