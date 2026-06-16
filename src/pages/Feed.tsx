@@ -6,7 +6,7 @@ import { FeedCommentSection } from "@/components/mirec/FeedCommentSection";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import Podcast from "@/pages/Podcast";
+// import Podcast from "@/pages/Podcast";  // ← Supprimé
 
 // ============================================================
 // TYPES
@@ -757,7 +757,12 @@ export default function Feed({ onTabChange }: FeedProps) {
       </div>
 
       {/* ── PAGE PODCAST ── */}
-      {filter === "podcast" && <div className="relative z-10"><Podcast /></div>}
+      {filter === "podcast" && (
+        <div className="relative z-10 p-6 text-center text-white/70">
+          <p className="text-lg font-bold text-white">🎙️ Espace Podcast</p>
+          <p className="text-sm mt-2">Les canaux et épisodes apparaîtront ici.</p>
+        </div>
+      )}
 
       {/* ── LISTE POSTS ── */}
       <div className="relative z-10 max-w-lg mx-auto px-4 py-4 space-y-4">
