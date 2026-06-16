@@ -6,6 +6,7 @@ import { FeedCommentSection } from "@/components/mirec/FeedCommentSection";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+// import Podcast from "@/pages/Podcast";  // ← Supprimé
 
 // ============================================================
 // TYPES
@@ -94,6 +95,7 @@ function FlashCard({ flash, onOpen, onAmen }: {
 }) {
   const initials = (flash.author_name || "?").slice(0, 2).toUpperCase();
 
+  // Dégradé selon le type
   const gradients: Record<string, string> = {
     text:  "linear-gradient(160deg, #1A4B9B, #7C3AED)",
     verse: "linear-gradient(160deg, #D97706, #f59e0b)",
@@ -115,6 +117,7 @@ function FlashCard({ flash, onOpen, onAmen }: {
       onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.04)")}
       onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
     >
+      {/* Fond — image/vidéo ou dégradé */}
       {flash.media_url && flash.type === "image" ? (
         <img src={flash.media_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
       ) : flash.media_url && flash.type === "video" ? (
@@ -123,14 +126,17 @@ function FlashCard({ flash, onOpen, onAmen }: {
         <div className="absolute inset-0" style={{ background: gradient }} />
       )}
 
+      {/* Overlay sombre en bas */}
       <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.72) 40%, rgba(0,0,0,0.1) 70%, transparent 100%)" }} />
 
+      {/* Badge type */}
       <div className="absolute top-2 right-2">
         <span className="text-base">
           {flash.type === "text" ? "✨" : flash.type === "verse" ? "📖" : flash.type === "image" ? "🖼️" : "🎬"}
         </span>
       </div>
 
+      {/* Avatar en haut à gauche */}
       <div className="absolute top-2 left-2">
         <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white/80"
           style={{ boxShadow: "0 0 0 2px rgba(255,255,255,0.3)" }}>
@@ -142,6 +148,7 @@ function FlashCard({ flash, onOpen, onAmen }: {
         </div>
       </div>
 
+      {/* Infos bas */}
       <div className="absolute bottom-0 left-0 right-0 px-2 pb-2">
         <p className="text-[10px] font-bold text-white leading-tight truncate mb-0.5">
           {flash.author_name.split(" ")[0]}
@@ -153,6 +160,7 @@ function FlashCard({ flash, onOpen, onAmen }: {
         )}
         <p className="text-[8px] text-white/50">{timeLeft(flash.created_at)}</p>
 
+        {/* Bouton Amen */}
         <button
           onClick={e => { e.stopPropagation(); onAmen(flash.id, e); }}
           className="mt-1.5 w-full flex items-center justify-center gap-1 py-1 rounded-full text-[9px] font-bold transition-all active:scale-90"
@@ -195,6 +203,7 @@ function FlashDetail({ flash, onClose, onAmen }: {
       <div className="relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl"
         style={{ maxHeight: "85vh" }} onClick={e => e.stopPropagation()}>
 
+        {/* Media plein si image/vidéo */}
         {flash.media_url && flash.type === "image" && (
           <img src={flash.media_url} alt="" className="w-full max-h-72 object-cover" />
         )}
@@ -202,7 +211,9 @@ function FlashDetail({ flash, onClose, onAmen }: {
           <video src={flash.media_url} controls className="w-full max-h-72 bg-black" />
         )}
 
+        {/* Corps */}
         <div style={{ background: gradient.replace("160deg", "180deg") }}>
+          {/* Header auteur */}
           <div className="flex items-center gap-3 px-5 pt-4 pb-3">
             <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-white/40 flex-shrink-0">
               {flash.author_avatar
@@ -224,6 +235,7 @@ function FlashDetail({ flash, onClose, onAmen }: {
             </button>
           </div>
 
+          {/* Texte */}
           {flash.content && (
             <div className="px-5 pb-4">
               <div className="bg-black/20 rounded-2xl px-4 py-3 backdrop-blur-sm">
@@ -232,6 +244,7 @@ function FlashDetail({ flash, onClose, onAmen }: {
             </div>
           )}
 
+          {/* Bouton Amen */}
           <div className="px-5 pb-5 flex flex-col items-center gap-1.5">
             <button onClick={e => onAmen(flash.id, e)}
               className="flex items-center gap-2 px-8 py-2.5 rounded-full font-bold text-sm transition-all active:scale-95"
@@ -268,7 +281,7 @@ function NewFlashModal({ onClose, onSubmit }: {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [preview, setPreview]  = useState<string | null>(null);
   const [saving, setSaving]    = useState(false);
-  const [uploadProgress] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const imageRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
 
@@ -276,6 +289,7 @@ function NewFlashModal({ onClose, onSubmit }: {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validation vidéo < 3 min (180s) — vérif côté client via durée
     if (type === "video") {
       const vid = document.createElement("video");
       vid.src = URL.createObjectURL(file);
@@ -290,6 +304,7 @@ function NewFlashModal({ onClose, onSubmit }: {
       return;
     }
 
+    // Image — max 5 Mo
     if (file.size > 5 * 1024 * 1024) { alert("Image trop lourde (max 5 Mo)"); return; }
     setMediaFile(file);
     setPreview(URL.createObjectURL(file));
@@ -321,6 +336,7 @@ function NewFlashModal({ onClose, onSubmit }: {
           <button onClick={onClose} className="p-1.5 rounded-full hover:bg-muted"><X className="w-4 h-4 text-muted-foreground" /></button>
         </div>
 
+        {/* Sélecteur de type */}
         <div className="flex gap-2 flex-wrap">
           {(["text", "verse", "image", "video"] as const).map(t => (
             <button key={t} onClick={() => { setType(t); setMediaFile(null); setPreview(null); }}
@@ -330,6 +346,7 @@ function NewFlashModal({ onClose, onSubmit }: {
           ))}
         </div>
 
+        {/* Zone média */}
         {(type === "image" || type === "video") && (
           <div>
             {preview ? (
@@ -361,6 +378,7 @@ function NewFlashModal({ onClose, onSubmit }: {
           </div>
         )}
 
+        {/* Texte */}
         <textarea
           value={content} onChange={e => setContent(e.target.value)} maxLength={280}
           placeholder={typeConfig[type].ph} rows={3}
@@ -368,6 +386,7 @@ function NewFlashModal({ onClose, onSubmit }: {
         />
         <p className="text-[10px] text-muted-foreground text-right">{content.length}/280</p>
 
+        {/* Actions */}
         <div className="flex gap-2 pb-2">
           <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-border text-sm text-muted-foreground">Annuler</button>
           <button onClick={handleSubmit}
@@ -476,17 +495,17 @@ export default function Feed({ onTabChange }: FeedProps) {
   const { user }    = useAuth();
   const navigate    = useNavigate();
 
-  // Flash States
+  // Flash
   const [flashes, setFlashes]         = useState<Flash[]>([]);
-  const [, setLoadingFlashes] = useState(true);
+  const [loadingFlashes, setLoadingFlashes] = useState(true);
   const [selectedFlash, setSelectedFlash]   = useState<Flash | null>(null);
   const [showNewFlash, setShowNewFlash]     = useState(false);
   const [particles, setParticles]     = useState<{ id: number; x: number; y: number }[]>([]);
   const particleId = useRef(0);
 
-  // Posts States
+  // Posts
   const [posts, setPosts]           = useState<FeedPost[]>([]);
-  const [, setLoadingPosts] = useState(true);
+  const [loadingPosts, setLoadingPosts] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showNewPost, setShowNewPost] = useState(false);
   const [filter, setFilter]         = useState("all");
@@ -533,225 +552,352 @@ export default function Feed({ onTabChange }: FeedProps) {
     else await supabase.from("flash_amens").insert({ flash_id: flashId, user_id: user.id });
   };
 
+  // ---- NOUVEAU FLASH avec upload media ----
+  const handleNewFlash = async (data: { content: string; type: Flash["type"]; mediaFile?: File }) => {
+    if (!user) return;
+    let mediaUrl: string | null = null;
+
+    if (data.mediaFile) {
+      const ext  = data.mediaFile.name.split(".").pop();
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const bucket = data.type === "video" ? "flash-videos" : "flash-images";
+      const { error: upErr } = await supabase.storage.from(bucket).upload(path, data.mediaFile);
+      if (upErr) { console.error("Upload:", upErr); return; }
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+      mediaUrl = urlData.publicUrl;
+    }
+
+    await supabase.from("flashes").insert({ content: data.content, type: data.type, media_url: mediaUrl, author_id: user.id });
+    fetchFlashes();
+  };
+
   // ---- FETCH POSTS ----
   const fetchPosts = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoadingPosts(true);
-    try {
-      let q = supabase.from("posts").select("id, created_at, content, type, author_id, image_url").order("created_at", { ascending: false });
-      if (filter !== "all") q = q.eq("type", filter);
-      const { data: pd, error } = await q;
-      if (error) throw error;
-      if (!pd || pd.length === 0) { setPosts([]); return; }
-      
-      const authorIds = [...new Set(pd.map(p => p.author_id))];
+    if (isRefresh) setRefreshing(true); else setLoadingPosts(true);
+    let result = await supabase.from("posts").select("id, content, type, created_at, author_id, image_url").order("created_at", { ascending: false }).limit(50);
+    if (result.error) result = await supabase.from("posts").select("id, content, type, created_at, author_id").order("created_at", { ascending: false }).limit(50);
+    const { data: postsData, error } = result;
+    if (error || !postsData) { setLoadingPosts(false); setRefreshing(false); return; }
+    const authorIds = [...new Set(postsData.map(p => p.author_id).filter(Boolean))];
+    let profileMap: Record<string, { name: string; avatar: string | null }> = {};
+    if (authorIds.length > 0) {
       const { data: profiles } = await supabase.from("profiles").select("id, full_name, avatar_url").in("id", authorIds);
-      const pm = Object.fromEntries((profiles || []).map(p => [p.id, { name: p.full_name || "Membre", avatar: getAvatarUrl(p.avatar_url) }]));
-      
-      const postIds = pd.map(p => p.id);
-      const { data: rx } = await supabase.from("post_reactions").select("post_id, reaction_type, user_id").in("post_id", postIds);
-      const { data: cc } = await supabase.rpc("get_comments_count", { post_ids: postIds });
-      const cm = Object.fromEntries((cc || []).map((c: any) => [c.post_id, c.count]));
-
-      setPosts(pd.map((p: any) => {
-        const prof = pm[p.author_id] || { name: "Membre", avatar: null };
-        const pr = rx?.filter(r => r.post_id === p.id) || [];
-        const ur = Object.fromEntries(pr.filter(r => r.user_id === user?.id).map(r => [r.reaction_type, true]));
-        return {
-          id: p.id, created_at: p.created_at, content: p.content, type: p.type, author_id: p.author_id,
-          author_name: prof.name, author_initials: prof.name.slice(0, 2).toUpperCase(), author_avatar: prof.avatar,
-          image_url: p.image_url ? supabase.storage.from("posts").getPublicUrl(p.image_url).data?.publicUrl : null,
-          reactions: { amen: pr.filter(r => r.reaction_type === "amen").length, feu: pr.filter(r => r.reaction_type === "feu").length, coeur: pr.filter(r => r.reaction_type === "coeur").length },
-          user_reactions: ur, comments_count: cm[p.id] || 0
-        };
-      }));
-    } catch (err) { console.error(err); } finally { setLoadingPosts(false); setRefreshing(false); }
-  }, [filter, user]);
+      profileMap = Object.fromEntries((profiles || []).map(p => [p.id, { name: p.full_name || "Membre MIREC", avatar: getAvatarUrl(p.avatar_url) }]));
+    }
+    const postIds = postsData.map(p => p.id);
+    const { data: allReactions } = await supabase.from("reactions").select("content_id, type, author_id").in("content_id", postIds);
+    const { data: allComments }  = await supabase.from("comments").select("post_id").in("post_id", postIds);
+    const commentCounts: Record<string, number> = {};
+    (allComments || []).forEach(c => { if (c.post_id) commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1; });
+    const enriched: FeedPost[] = postsData.map(post => {
+      const pr = allReactions?.filter(r => r.content_id === post.id) || [];
+      const reactions = { amen: 0, feu: 0, coeur: 0 };
+      const user_reactions: Record<string, boolean> = {};
+      pr.forEach(r => { if (r.type in reactions) reactions[r.type as keyof typeof reactions]++; if (r.author_id === user?.id) user_reactions[r.type] = true; });
+      const p = profileMap[post.author_id];
+      const name = p?.name || "Membre MIREC";
+      return { ...post, type: post.type || "post", author_name: name, author_initials: name.slice(0, 2).toUpperCase(), author_avatar: p?.avatar || null, image_url: (post as any).image_url || null, reactions, user_reactions, comments_count: commentCounts[post.id] || 0 };
+    });
+    setPosts(enriched);
+    setLoadingPosts(false); setRefreshing(false);
+  }, [user]);
 
   useEffect(() => { fetchFlashes(); fetchPosts(); }, [fetchFlashes, fetchPosts]);
 
-  const handleNewFlashSubmit = async (data: { content: string; type: Flash["type"]; mediaFile?: File }) => {
-    if (!user) return;
-    try {
-      let media_url = null;
-      if (data.mediaFile) {
-        const ext = data.mediaFile.name.split(".").pop();
-        const path = `${user.id}/${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("flashes" as any).upload(path, data.mediaFile);
-        if (upErr) throw upErr;
-        media_url = supabase.storage.from("flashes" as any).getPublicUrl(path).data?.publicUrl || null;
-      }
-      const { error } = await supabase.from("flashes").insert({ author_id: user.id, content: data.content, type: data.type, media_url });
-      if (error) throw error;
-      fetchFlashes();
-    } catch (err) { console.error(err); alert("Erreur de publication du Flash"); }
-  };
-
-  const handlePostReact = async (postId: string, typeStr: "amen" | "feu" | "coeur") => {
+  const handleReact = async (postId: string, key: "amen" | "feu" | "coeur") => {
     if (!user) { navigate("/auth"); return; }
     const post = posts.find(p => p.id === postId);
     if (!post) return;
-    const wasReacted = post.user_reactions[typeStr];
-    setPosts(prev => prev.map(p => {
-      if (p.id !== postId) return p;
-      return { ...p, user_reactions: { ...p.user_reactions, [typeStr]: !wasReacted }, reactions: { ...p.reactions, [typeStr]: p.reactions[typeStr] + (wasReacted ? -1 : 1) } };
-    }));
-    if (wasReacted) await supabase.from("post_reactions").delete().eq("post_id", postId).eq("user_id", user.id).eq("reaction_type", typeStr);
-    else await supabase.from("post_reactions").insert({ post_id: postId, user_id: user.id, reaction_type: typeStr });
+    const wasActive = post.user_reactions[key];
+    setPosts(prev => prev.map(p => p.id !== postId ? p : { ...p, reactions: { ...p.reactions, [key]: p.reactions[key] + (wasActive ? -1 : 1) }, user_reactions: { ...p.user_reactions, [key]: !wasActive } }));
+    if (wasActive) await supabase.from("reactions").delete().eq("content_id", postId).eq("author_id", user.id).eq("type", key);
+    else await supabase.from("reactions").insert({ content_id: postId, author_id: user.id, type: key });
   };
 
-  const handlePostDelete = async (postId: string) => {
-    if (!window.confirm("Supprimer ce post ?")) return;
+  const handleNewPost = async (data: { content: string; type: string; imageUrl?: string }) => {
+    if (!user) { navigate("/auth"); return; }
+    const payload: Record<string, any> = { content: data.content, type: data.type, author_id: user.id };
+    if (data.imageUrl) payload.image_url = data.imageUrl;
+    const { error } = await supabase.from("posts").insert(payload);
+    if (!error) fetchPosts();
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    setPosts(prev => prev.filter(p => p.id !== postId));
     setMenuOpen(null);
-    const { error } = await supabase.from("posts").delete().eq("id", postId);
-    if (!error) setPosts(prev => prev.filter(p => p.id !== postId));
+    await supabase.from("reactions").delete().eq("content_id", postId);
+    await supabase.from("posts").delete().eq("id", postId);
   };
 
-  const handlePostEditSave = async (postId: string) => {
+  const startEdit = (post: FeedPost) => { setEditingPost(post.id); setEditContent(post.content); setMenuOpen(null); };
+  const saveEdit  = async (postId: string) => {
     if (!editContent.trim()) return;
-    const { error } = await supabase.from("posts").update({ content: editContent.trim() }).eq("id", postId);
-    if (!error) {
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, content: editContent.trim() } : p));
-      setEditingPost(null);
-    }
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, content: editContent.trim() } : p));
+    setEditingPost(null);
+    await supabase.from("posts").update({ content: editContent.trim() }).eq("id", postId);
   };
+
+  const filters = [{ key: "all", label: "Tout" }, { key: "announcement", label: "📢 Annonces" }, { key: "testimony", label: "✨ Témoignages" }, { key: "prayer", label: "🙏 Prières" }, { key: "podcast", label: "🎙️ Podcasts" }];
+  const filteredPosts = filter === "all" ? posts : posts.filter(p => p.type === filter);
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <header className="sticky top-0 bg-card/80 backdrop-blur-md border-b border-border/40 px-4 py-3 flex items-center justify-between z-40">
-        <MirecLogo className="h-7 w-auto" />
-        <div className="flex items-center gap-2">
-          <button onClick={() => fetchPosts(true)} className="p-2 rounded-full hover:bg-muted text-foreground transition-colors">
-            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-          </button>
-          <button className="p-2 rounded-full hover:bg-muted text-foreground relative">
-            <Bell className="w-4 h-4" />
-          </button>
+    <div className="min-h-screen pb-20 relative bg-background">
+
+      {/* Décoration douce en fond */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+        <div style={{ position: "absolute", top: "-10%", right: "-5%", width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, hsl(var(--primary) / 0.12) 0%, transparent 70%)" }} />
+        <div style={{ position: "absolute", bottom: "20%", left: "-8%", width: 280, height: 280, borderRadius: "50%", background: "radial-gradient(circle, hsl(var(--mirec-purple) / 0.07) 0%, transparent 70%)" }} />
+        <div style={{ position: "absolute", top: "40%", right: "10%", width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, hsl(var(--primary) / 0.08) 0%, transparent 70%)" }} />
+      </div>
+
+      {/* STYLES ANIMATIONS */}
+      <style>{`
+        @keyframes amen-particle { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0} }
+        @keyframes shimmer { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
+      `}</style>
+
+      {/* ── HEADER ── */}
+      <header className="sticky top-0 z-30 border-b border-primary/20 px-4 py-3 relative bg-background/90 backdrop-blur-xl">
+        <div className="max-w-lg mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <MirecLogo size={36} />
+            <div>
+              <h1 className="font-display text-xl font-bold tracking-wide text-foreground leading-none">MIREC</h1>
+              <p className="text-[9px] text-primary/70 font-medium tracking-wider uppercase">Communauté de foi</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <button onClick={() => fetchPosts(true)} disabled={refreshing} className="p-2 rounded-full hover:bg-primary/10 transition-colors">
+              <RefreshCw className={`w-5 h-5 text-muted-foreground ${refreshing ? "animate-spin" : ""}`} />
+            </button>
+            <button className="relative p-2 rounded-full hover:bg-primary/10 transition-colors">
+              <Bell className="w-5 h-5 text-muted-foreground" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full border border-card" />
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Flashes / Stories bar */}
-      <div className="border-b border-border/30 bg-card/40 py-4 px-4 overflow-x-auto flex gap-3 scrollbar-none items-center">
-        <button onClick={() => { if (!user) navigate("/auth"); else setShowNewFlash(true); }}
-          className="flex-shrink-0 flex flex-col items-center justify-center bg-muted rounded-2xl relative hover:bg-muted/80 transition-all border border-dashed border-border"
-          style={{ width: 100, height: 160, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
-          <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-1"><Plus className="w-5 h-5" /></div>
-          <span className="text-[11px] font-bold text-foreground">Mon Flash</span>
-          <span className="text-[9px] text-muted-foreground mt-0.5">24h éphémère</span>
-        </button>
+      {/* ── SECTION FLASH — style Facebook Stories ── */}
+      <div className="relative z-10 max-w-lg mx-auto px-4 pt-5 pb-3">
 
-        {flashes.map(f => (
-          <FlashCard key={f.id} flash={f} onOpen={setSelectedFlash} onAmen={handleAmen} />
-        ))}
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="px-4 pt-4 flex gap-1.5 overflow-x-auto scrollbar-none border-b border-border/20 bg-background sticky top-[53px] z-30 py-2">
-        {[{ id: "all", l: "Tout" }, { id: "testimony", l: "✨ Témoignages" }, { id: "prayer", l: "🙏 Prières" }, { id: "announcement", l: "📢 Annonces" }, { id: "verse", l: "📖 Versets" }].map(t => (
-          <button key={t.id} onClick={() => setFilter(t.id)}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${filter === t.id ? "bg-primary text-primary-foreground shadow-sm" : "bg-card text-muted-foreground border border-border/50 hover:bg-muted"}`}>
-            {t.l}
+        {/* Titre + bouton */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-foreground">✨ Flash du jour</span>
+            {flashes.length > 0 && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-primary-foreground"
+                style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--mirec-purple)))" }}>
+                {flashes.length}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => { if (!user) { navigate("/auth"); return; } setShowNewFlash(true); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-primary-foreground transition-all active:scale-95"
+            style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--mirec-purple)))", boxShadow: "0 2px 8px hsl(var(--primary) / 0.3)" }}>
+            ✨ Partager
           </button>
-        ))}
+        </div>
+
+        {loadingFlashes ? (
+          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex-shrink-0 rounded-2xl animate-pulse bg-muted"
+                style={{ width: 100, height: 160 }} />
+            ))}
+          </div>
+        ) : flashes.length === 0 ? (
+          /* État vide */
+          <div className="flex items-center gap-3 py-4 px-4 rounded-2xl bg-primary/10 border border-dashed border-primary/40">
+            <span className="text-2xl">🙏</span>
+            <div>
+              <p className="text-xs font-semibold text-foreground">Aucun flash aujourd'hui</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Sois le premier à partager une victoire !</p>
+            </div>
+          </div>
+        ) : (
+          /* ── STORIES RECTANGULAIRES — scroll horizontal ── */
+          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 -mx-1 px-1">
+
+            {/* Bouton + Ajouter ton flash */}
+            <button
+              onClick={() => { if (!user) { navigate("/auth"); return; } setShowNewFlash(true); }}
+              className="flex-shrink-0 relative overflow-hidden flex flex-col items-center justify-center gap-2 border-2 border-dashed border-primary/50 transition-all active:scale-95 bg-primary/5"
+              style={{ width: 100, height: 160, borderRadius: 14 }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--mirec-purple)))" }}>
+                <Plus className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <p className="text-[10px] font-semibold text-center text-primary px-2 leading-tight">Ajouter un flash</p>
+            </button>
+
+            {/* Flash Cards */}
+            {flashes.map(flash => (
+              <FlashCard key={flash.id} flash={flash} onOpen={setSelectedFlash} onAmen={handleAmen} />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Main Feed Posts List */}
-      <div className="px-4 mt-4 space-y-4 max-w-lg mx-auto">
-        {posts.map(post => {
+      {/* ── FILTRES ── */}
+      <div className="sticky top-[61px] z-20 border-b border-primary/15 px-4 py-2.5 relative bg-background/90 backdrop-blur-xl">
+        <div className="max-w-lg mx-auto flex gap-2 overflow-x-auto no-scrollbar">
+          {filters.map(f => (
+            <button key={f.key} onClick={() => setFilter(f.key)}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                filter === f.key
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "bg-muted text-muted-foreground hover:bg-muted/70"
+              }`}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── PAGE PODCAST ── */}
+      {filter === "podcast" && (
+        <div className="relative z-10 p-6 text-center text-white/70">
+          <p className="text-lg font-bold text-white">🎙️ Espace Podcast</p>
+          <p className="text-sm mt-2">Les canaux et épisodes apparaîtront ici.</p>
+        </div>
+      )}
+
+      {/* ── LISTE POSTS ── */}
+      <div className="relative z-10 max-w-lg mx-auto px-4 py-4 space-y-4">
+        {filter === "podcast" ? null
+        : loadingPosts ? (
+          <div className="flex flex-col items-center py-16 gap-3">
+            <div className="w-8 h-8 rounded-full border-primary border-t-transparent animate-spin" style={{ borderWidth: 3 }} />
+            <p className="text-xs text-muted-foreground">Chargement du fil...</p>
+          </div>
+        ) : filteredPosts.length === 0 ? (
+          <div className="flex flex-col items-center py-16 text-center gap-3">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-primary/10 border border-primary/20">
+              <Sparkles className="w-8 h-8 text-primary/60" />
+            </div>
+            <p className="font-semibold text-foreground">Aucun post ici</p>
+            <p className="text-sm text-muted-foreground">Sois le premier à partager quelque chose !</p>
+          </div>
+        ) : filteredPosts.map(post => {
           const tc = typeConfig(post.type);
-          const isMe = user?.id === post.author_id;
+          const isAuthor  = user?.id === post.author_id;
+          const isEditing = editingPost === post.id;
           return (
-            <div key={post.id} className="bg-card rounded-2xl p-4 shadow-sm border border-border/40 space-y-3 relative">
-              <div className="flex items-start gap-3">
-                <PostAvatar avatarUrl={post.author_avatar} initials={post.author_initials}
-                  onClick={() => setProfileModal({ userId: post.author_id, name: post.author_name, initials: post.author_initials, avatar: post.author_avatar })}
-                />
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm text-foreground truncate">{post.author_name}</h4>
-                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
-                    <span>{timeAgo(post.created_at)}</span>
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ backgroundColor: tc.bg, color: tc.color }}>{tc.label}</span>
+            <div key={post.id} className="rounded-2xl overflow-hidden bg-card border border-border transition-all hover:shadow-md shadow-sm"
+              style={{ borderColor: tc.border }}>
+
+              {/* Bandeau couleur */}
+              <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${tc.color}, ${tc.color}88)` }} />
+
+              <div className="p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <PostAvatar avatarUrl={post.author_avatar} initials={post.author_initials} size={42}
+                    onClick={() => setPhotoModal({ url: post.author_avatar, name: post.author_name, initials: post.author_initials })} />
+                  <div className="flex-1 min-w-0">
+                    <button onClick={() => setProfileModal({ userId: post.author_id, name: post.author_name, initials: post.author_initials, avatar: post.author_avatar })}
+                      className="text-sm font-bold text-foreground hover:text-primary hover:underline text-left block truncate">
+                      {post.author_name}
+                    </button>
+                    <p className="text-[11px] text-muted-foreground">{timeAgo(post.created_at)}</p>
                   </div>
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
+                    style={{ color: tc.color, backgroundColor: tc.bg, border: `1px solid ${tc.border}` }}>
+                    {tc.label}
+                  </span>
+                  {isAuthor && (
+                    <div className="relative">
+                      <button onClick={() => setMenuOpen(menuOpen === post.id ? null : post.id)} className="p-1.5 rounded-full hover:bg-muted">
+                        <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                      {menuOpen === post.id && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(null)} />
+                          <div className="absolute right-0 top-8 z-50 bg-popover text-popover-foreground border border-border rounded-xl shadow-lg py-1 min-w-[140px]">
+                            <button onClick={() => startEdit(post)} className="flex items-center gap-2 w-full px-3 py-2.5 text-sm hover:bg-muted">
+                              <Pencil className="w-3.5 h-3.5" /> Modifier
+                            </button>
+                            <button onClick={() => handleDeletePost(post.id)} className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10">
+                              <Trash2 className="w-3.5 h-3.5" /> Supprimer
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                {isMe && (
-                  <div className="relative">
-                    <button onClick={() => setMenuOpen(menuOpen === post.id ? null : post.id)} className="p-1 rounded-full hover:bg-muted text-muted-foreground"><MoreVertical className="w-4 h-4" /></button>
-                    {menuOpen === post.id && (
-                      <div className="absolute right-0 mt-1 w-36 bg-card border border-border rounded-xl shadow-lg py-1 z-10 animate-in fade-in slide-in-from-top-1">
-                        <button onClick={() => { setEditingPost(post.id); setEditContent(post.content); setMenuOpen(null); }} className="w-full px-3 py-2 text-xs flex items-center gap-2 hover:bg-muted text-foreground font-medium"><Pencil className="w-3.5 h-3.5 text-muted-foreground" /> Modifier</button>
-                        <button onClick={() => handlePostDelete(post.id)} className="w-full px-3 py-2 text-xs flex items-center gap-2 hover:bg-muted text-destructive font-medium border-t border-border/40"><Trash2 className="w-3.5 h-3.5" /> Supprimer</button>
+                {isEditing ? (
+                  <div className="mb-4 space-y-2">
+                    <textarea value={editContent} onChange={e => setEditContent(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-border bg-muted text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" rows={3} />
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={() => setEditingPost(null)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-muted">
+                        <X className="w-3.5 h-3.5" /> Annuler
+                      </button>
+                      <button onClick={() => saveEdit(post.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs bg-primary text-primary-foreground font-medium">
+                        <Check className="w-3.5 h-3.5" /> Enregistrer
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mb-3 space-y-3">
+                    {post.content && (
+                      <div className="rounded-xl px-3.5 py-3" style={{ background: tc.gradient }}>
+                        <p className="text-sm text-foreground leading-relaxed">{post.content}</p>
+                      </div>
+                    )}
+                    {post.image_url && (
+                      <div className="rounded-xl overflow-hidden border border-border">
+                        <img src={post.image_url} alt="" className="w-full max-h-80 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                          onClick={() => setPhotoModal({ url: post.image_url, name: post.author_name, initials: post.author_initials })} />
                       </div>
                     )}
                   </div>
                 )}
-              </div>
 
-              {editingPost === post.id ? (
-                <div className="space-y-2 mt-2">
-                  <textarea value={editContent} onChange={e => setEditContent(e.target.value)} className="w-full text-sm p-3 rounded-xl border border-border bg-background outline-none focus:ring-2 focus:ring-primary/20 resize-none" rows={3} />
-                  <div className="flex justify-end gap-1.5">
-                    <button onClick={() => setEditingPost(null)} className="p-1.5 rounded-lg border border-border text-muted-foreground"><X className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => handlePostEditSave(post.id)} className="p-1.5 rounded-lg bg-primary text-primary-foreground flex items-center gap-1 text-xs font-bold"><Check className="w-3.5 h-3.5" /> Sauver</button>
-                  </div>
-                </div>
-              ) : (
-                <p className={`text-sm text-foreground leading-relaxed whitespace-pre-wrap ${post.type === "verse" ? "font-serif italic text-base bg-muted/30 p-3 rounded-xl border-l-4 border-amber-500" : ""}`}>{post.content}</p>
-              )}
-
-              {post.image_url && (
-                <div onClick={() => setPhotoModal({ url: post.image_url, name: post.author_name, initials: post.author_initials })}
-                  className="rounded-xl overflow-hidden bg-muted border border-border/30 max-h-60 cursor-pointer overflow-hidden group">
-                  <img src={post.image_url} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
-                </div>
-              )}
-
-              {/* Reactions buttons */}
-              <div className="flex items-center gap-4 pt-2 border-t border-border/20">
-                {(["amen", "feu", "coeur"] as const).map(rk => {
-                  const emojis = { amen: "🙏", feu: "🔥", coeur: "❤️" };
-                  const active = post.user_reactions[rk];
-                  return (
-                    <button key={rk} onClick={() => handlePostReact(post.id, rk)}
-                      className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-all active:scale-95 ${active ? "bg-primary/5 border-primary/20 font-bold text-primary" : "bg-muted/40 border-transparent text-muted-foreground"}`}>
-                      <span>{emojis[rk]}</span>
-                      {post.reactions[rk] > 0 && <span className="text-[11px] font-medium">{post.reactions[rk]}</span>}
+                {/* Réactions */}
+                <div className="flex gap-2 pt-3 border-t" style={{ borderColor: `${tc.border}88` }}>
+                  {([
+                    { key: "amen"  as const, emoji: "🙏", activeColor: "#7C3AED" },
+                    { key: "feu"   as const, emoji: "🔥", activeColor: "#D97706" },
+                    { key: "coeur" as const, emoji: "❤️", activeColor: "#e11d48" },
+                  ]).map(r => (
+                    <button key={r.key} onClick={() => handleReact(post.id, r.key)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-90 ${
+                        post.user_reactions[r.key] ? "" : "bg-muted text-muted-foreground border-[1.5px] border-transparent"
+                      }`}
+                      style={post.user_reactions[r.key] ? {
+                        background: `${r.activeColor}15`, color: r.activeColor, border: `1.5px solid ${r.activeColor}44`,
+                      } : undefined}>
+                      <span className="text-sm leading-none">{r.emoji}</span>
+                      <span>{post.reactions[r.key]}</span>
                     </button>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
 
-              {/* Comments Section expanded by default for full interactions */}
-              <FeedCommentSection postId={post.id} initialCount={post.comments_count} />
+                <FeedCommentSection postId={post.id} commentsCount={post.comments_count} userId={user?.id} postAuthorId={post.author_id} />
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* Floating Action Button (FAB) for new Post */}
-      <button onClick={() => { if (!user) navigate("/auth"); else setShowNewPost(true); }}
-        className="fixed bottom-24 right-5 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-40">
-        <Sparkles className="w-5 h-5" />
+      {/* FAB */}
+      <button onClick={() => { if (!user) { navigate("/auth"); return; } setShowNewPost(true); }}
+        className="fixed bottom-20 right-4 sm:right-[calc(50%-224px)] w-14 h-14 rounded-full text-primary-foreground shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-30"
+        style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--mirec-purple)))", boxShadow: "0 4px 20px hsl(var(--primary) / 0.4)" }}>
+        <Plus className="w-6 h-6" />
       </button>
 
-      {/* Modals Mounting */}
-      {showNewPost && <NewPostModal onClose={() => setShowNewPost(false)} onPostCreated={() => fetchPosts()} />}
-      {showNewFlash && <NewFlashModal onClose={() => setShowNewFlash(false)} onSubmit={handleNewFlashSubmit} />}
+      {/* MODALS */}
+      {showNewPost  && <NewPostModal  onClose={() => setShowNewPost(false)}  onSubmit={handleNewPost} />}
+      {showNewFlash && <NewFlashModal onClose={() => setShowNewFlash(false)} onSubmit={handleNewFlash} />}
+      {photoModal   && <PhotoModal    avatarUrl={photoModal.url} name={photoModal.name} initials={photoModal.initials} onClose={() => setPhotoModal(null)} />}
+      {profileModal && <UserProfileModal userId={profileModal.userId} name={profileModal.name} initials={profileModal.initials} avatarUrl={profileModal.avatar} onTabChange={onTabChange} onClose={() => setProfileModal(null)} onViewPhoto={() => { setPhotoModal({ url: profileModal.avatar, name: profileModal.name, initials: profileModal.initials }); setProfileModal(null); }} />}
       {selectedFlash && <FlashDetail flash={selectedFlash} onClose={() => setSelectedFlash(null)} onAmen={handleAmen} />}
-      {photoModal && <PhotoModal avatarUrl={photoModal.url} name={photoModal.name} initials={photoModal.initials} onClose={() => setPhotoModal(null)} />}
-      
-      {profileModal && (
-        <UserProfileModal userId={profileModal.userId} name={profileModal.name} initials={profileModal.initials} avatarUrl={profileModal.avatar}
-          onClose={() => setProfileModal(null)} onTabChange={onTabChange}
-          onViewPhoto={() => { const av = profileModal.avatar; const nm = profileModal.name; const ini = profileModal.initials; setProfileModal(null); setPhotoModal({ url: av, name: nm, initials: ini }); }}
-        />
-      )}
-
-      {/* Particles Canvas Container */}
-      {particles.map(p => (
-        <AmenParticles key={p.id} x={p.x} y={p.y} onDone={() => setParticles(prev => prev.filter(x => x.id !== p.id))} />
-      ))}
+      {particles.map(p => <AmenParticles key={p.id} x={p.x} y={p.y} onDone={() => setParticles(prev => prev.filter(x => x.id !== p.id))} />)}
     </div>
   );
 }
